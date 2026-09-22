@@ -3,12 +3,12 @@
   "WorkspaceRootPath": "C:\\Users\\fr300\\OneDrive\\Escritorio\\casanino-web\\casanino-web\\backend\\Casanino-API\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{A0E727F4-7CE7-440A-B28B-4EE96B03AAFB}|Casanino-API.csproj|c:\\users\\fr300\\onedrive\\escritorio\\casanino-web\\casanino-web\\backend\\casanino-api\\data\\casaninodbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{A0E727F4-7CE7-440A-B28B-4EE96B03AAFB}|Casanino-API.csproj|solutionrelative:data\\casaninodbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{967D0A14-78F0-8202-47A7-67A7B9A0F929}|Casanino-API.csproj|c:\\users\\fr300\\onedrive\\escritorio\\casanino-web\\casanino-web\\backend\\casanino-api\\data\\casaninodbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{967D0A14-78F0-8202-47A7-67A7B9A0F929}|Casanino-API.csproj|solutionrelative:data\\casaninodbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{A0E727F4-7CE7-440A-B28B-4EE96B03AAFB}|Casanino-API.csproj|c:\\users\\fr300\\onedrive\\escritorio\\casanino-web\\casanino-web\\backend\\casanino-api\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{A0E727F4-7CE7-440A-B28B-4EE96B03AAFB}|Casanino-API.csproj|solutionrelative:program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{967D0A14-78F0-8202-47A7-67A7B9A0F929}|Casanino-API.csproj|c:\\users\\fr300\\onedrive\\escritorio\\casanino-web\\casanino-web\\backend\\casanino-api\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{967D0A14-78F0-8202-47A7-67A7B9A0F929}|Casanino-API.csproj|solutionrelative:program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -30,8 +30,7 @@
               "RelativeToolTip": "Program.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-09-22T00:25:11.659Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-09-22T00:25:11.659Z"
             },
             {
               "$type": "Document",
@@ -41,7 +40,7 @@
               "RelativeDocumentMoniker": "Data\\CasaninoDbContext.cs",
               "ToolTip": "C:\\Users\\fr300\\OneDrive\\Escritorio\\casanino-web\\casanino-web\\backend\\Casanino-API\\Data\\CasaninoDbContext.cs",
               "RelativeToolTip": "Data\\CasaninoDbContext.cs",
-              "ViewState": "AgIAAAwAAAAAAAAAAAA5wBAAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAAA0AAAAAAAAAAAA1wBAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-09-22T00:24:42.477Z",
               "EditorCaption": ""

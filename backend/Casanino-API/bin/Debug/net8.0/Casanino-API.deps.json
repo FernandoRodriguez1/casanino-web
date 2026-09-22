@@ -8,12 +8,33 @@
     ".NETCoreApp,Version=v8.0": {
       "Casanino-API/1.0.0": {
         "dependencies": {
+          "AWSSDK.S3": "3.7.503",
           "Microsoft.EntityFrameworkCore.Design": "8.0.11",
           "Npgsql.EntityFrameworkCore.PostgreSQL": "8.0.11",
+          "SixLabors.ImageSharp": "2.1.11",
           "Swashbuckle.AspNetCore": "6.6.2"
         },
         "runtime": {
           "Casanino-API.dll": {}
+        }
+      },
+      "AWSSDK.Core/3.7.500.39": {
+        "runtime": {
+          "lib/net8.0/AWSSDK.Core.dll": {
+            "assemblyVersion": "3.3.0.0",
+            "fileVersion": "3.7.500.39"
+          }
+        }
+      },
+      "AWSSDK.S3/3.7.503": {
+        "dependencies": {
+          "AWSSDK.Core": "3.7.500.39"
+        },
+        "runtime": {
+          "lib/net8.0/AWSSDK.S3.dll": {
+            "assemblyVersion": "3.3.0.0",
+            "fileVersion": "3.7.503.0"
+          }
         }
       },
       "Humanizer.Core/2.14.1": {
@@ -409,6 +430,14 @@
           }
         }
       },
+      "SixLabors.ImageSharp/2.1.11": {
+        "runtime": {
+          "lib/netcoreapp3.1/SixLabors.ImageSharp.dll": {
+            "assemblyVersion": "2.0.0.0",
+            "fileVersion": "2.1.11.0"
+          }
+        }
+      },
       "Swashbuckle.AspNetCore/6.6.2": {
         "dependencies": {
           "Swashbuckle.AspNetCore.Swagger": "6.6.2",
@@ -521,6 +550,20 @@
       "type": "project",
       "serviceable": false,
       "sha512": ""
+    },
+    "AWSSDK.Core/3.7.500.39": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-HiqpqxNuGIhGiY8qrnOICyS2xkhOp/rr1jrr/i83oNxFlZle9HDFZMapEN2rAk5rZpWqIkodNBrEmVMiJbX1Yw==",
+      "path": "awssdk.core/3.7.500.39",
+      "hashPath": "awssdk.core.3.7.500.39.nupkg.sha512"
+    },
+    "AWSSDK.S3/3.7.503": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-w5jwsze7eYrM4SVidY7VvwjER6WirE2/MElEu9j+aChcyMwN+ZUzaj/grUTK+qjKnaM4SSqMVG3Ao5wFIAsvFA==",
+      "path": "awssdk.s3/3.7.503",
+      "hashPath": "awssdk.s3.3.7.503.nupkg.sha512"
     },
     "Humanizer.Core/2.14.1": {
       "type": "package",
@@ -668,6 +711,13 @@
       "sha512": "sha512-leShR/O/nSIS3Jpj8yUBmkzaXzBbtlV326+MYkX2BwAj2qSNrUv/H6m8G9Hnv2zUkQYccTpmV5jIVq5vdciEUA==",
       "path": "npgsql.entityframeworkcore.postgresql/8.0.11",
       "hashPath": "npgsql.entityframeworkcore.postgresql.8.0.11.nupkg.sha512"
+    },
+    "SixLabors.ImageSharp/2.1.11": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-tUvsejgzUmEbES114yLseRxmFiYlQbH5RyaYXUQsEL7ksDo1/kW+ZL1EfD6iSUfxj7LHU8p110oFvSrRfsaWSQ==",
+      "path": "sixlabors.imagesharp/2.1.11",
+      "hashPath": "sixlabors.imagesharp.2.1.11.nupkg.sha512"
     },
     "Swashbuckle.AspNetCore/6.6.2": {
       "type": "package",

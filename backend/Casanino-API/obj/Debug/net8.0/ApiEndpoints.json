@@ -218,6 +218,22 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "Casanino_API.Controllers.ImagenesController",
+    "Method": "Delete",
+    "RelativePath": "api/Imagenes",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "key",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "Casanino_API.Controllers.MarcasController",
     "Method": "GetMarcas",
     "RelativePath": "api/Marcas",
@@ -355,9 +371,49 @@
     "Order": 0,
     "Parameters": [
       {
-        "Name": "dto",
-        "Type": "Casanino_API.DTOs.CreateProductoRequest",
-        "IsRequired": true
+        "Name": "Codigo",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "Modelo",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "Nombre",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "Descripcion",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "CategoriaId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "MarcaId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "Especificaciones",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "Accesorios",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "Imagen",
+        "Type": "Microsoft.AspNetCore.Http.IFormFile",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": [
@@ -412,9 +468,49 @@
         "IsRequired": true
       },
       {
-        "Name": "dto",
-        "Type": "Casanino_API.DTOs.UpdateProductoRequest",
-        "IsRequired": true
+        "Name": "Codigo",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "Modelo",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "Nombre",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "Descripcion",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "CategoriaId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "MarcaId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "Especificaciones",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "Accesorios",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "Imagen",
+        "Type": "Microsoft.AspNetCore.Http.IFormFile",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": []

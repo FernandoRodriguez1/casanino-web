@@ -375,6 +375,27 @@
         }
       }
     },
+    "/api/Imagenes": {
+      "delete": {
+        "tags": [
+          "Imagenes"
+        ],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/Marcas": {
       "get": {
         "tags": [
@@ -603,19 +624,70 @@
         ],
         "requestBody": {
           "content": {
-            "application/json": {
+            "multipart/form-data": {
               "schema": {
-                "$ref": "#/components/schemas/CreateProductoRequest"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateProductoRequest"
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateProductoRequest"
+                "type": "object",
+                "properties": {
+                  "Codigo": {
+                    "type": "string"
+                  },
+                  "Modelo": {
+                    "type": "string"
+                  },
+                  "Nombre": {
+                    "type": "string"
+                  },
+                  "Descripcion": {
+                    "type": "string"
+                  },
+                  "CategoriaId": {
+                    "type": "integer",
+                    "format": "int32"
+                  },
+                  "MarcaId": {
+                    "type": "integer",
+                    "format": "int32"
+                  },
+                  "Especificaciones": {
+                    "type": "string"
+                  },
+                  "Accesorios": {
+                    "type": "string"
+                  },
+                  "Imagen": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              },
+              "encoding": {
+                "Codigo": {
+                  "style": "form"
+                },
+                "Modelo": {
+                  "style": "form"
+                },
+                "Nombre": {
+                  "style": "form"
+                },
+                "Descripcion": {
+                  "style": "form"
+                },
+                "CategoriaId": {
+                  "style": "form"
+                },
+                "MarcaId": {
+                  "style": "form"
+                },
+                "Especificaciones": {
+                  "style": "form"
+                },
+                "Accesorios": {
+                  "style": "form"
+                },
+                "Imagen": {
+                  "style": "form"
+                }
               }
             }
           }
@@ -700,19 +772,70 @@
         ],
         "requestBody": {
           "content": {
-            "application/json": {
+            "multipart/form-data": {
               "schema": {
-                "$ref": "#/components/schemas/UpdateProductoRequest"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateProductoRequest"
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateProductoRequest"
+                "type": "object",
+                "properties": {
+                  "Codigo": {
+                    "type": "string"
+                  },
+                  "Modelo": {
+                    "type": "string"
+                  },
+                  "Nombre": {
+                    "type": "string"
+                  },
+                  "Descripcion": {
+                    "type": "string"
+                  },
+                  "CategoriaId": {
+                    "type": "integer",
+                    "format": "int32"
+                  },
+                  "MarcaId": {
+                    "type": "integer",
+                    "format": "int32"
+                  },
+                  "Especificaciones": {
+                    "type": "string"
+                  },
+                  "Accesorios": {
+                    "type": "string"
+                  },
+                  "Imagen": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              },
+              "encoding": {
+                "Codigo": {
+                  "style": "form"
+                },
+                "Modelo": {
+                  "style": "form"
+                },
+                "Nombre": {
+                  "style": "form"
+                },
+                "Descripcion": {
+                  "style": "form"
+                },
+                "CategoriaId": {
+                  "style": "form"
+                },
+                "MarcaId": {
+                  "style": "form"
+                },
+                "Especificaciones": {
+                  "style": "form"
+                },
+                "Accesorios": {
+                  "style": "form"
+                },
+                "Imagen": {
+                  "style": "form"
+                }
               }
             }
           }
@@ -822,48 +945,6 @@
         },
         "additionalProperties": false
       },
-      "CreateProductoRequest": {
-        "type": "object",
-        "properties": {
-          "codigo": {
-            "type": "string",
-            "nullable": true
-          },
-          "modelo": {
-            "type": "string",
-            "nullable": true
-          },
-          "nombre": {
-            "type": "string",
-            "nullable": true
-          },
-          "descripcion": {
-            "type": "string",
-            "nullable": true
-          },
-          "imagen": {
-            "type": "string",
-            "nullable": true
-          },
-          "categoriaId": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "marcaId": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "especificaciones": {
-            "type": "string",
-            "nullable": true
-          },
-          "accesorios": {
-            "type": "string",
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
       "MarcaResponse": {
         "type": "object",
         "properties": {
@@ -960,48 +1041,6 @@
         "type": "object",
         "properties": {
           "nombre": {
-            "type": "string",
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
-      "UpdateProductoRequest": {
-        "type": "object",
-        "properties": {
-          "codigo": {
-            "type": "string",
-            "nullable": true
-          },
-          "modelo": {
-            "type": "string",
-            "nullable": true
-          },
-          "nombre": {
-            "type": "string",
-            "nullable": true
-          },
-          "descripcion": {
-            "type": "string",
-            "nullable": true
-          },
-          "imagen": {
-            "type": "string",
-            "nullable": true
-          },
-          "categoriaId": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "marcaId": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "especificaciones": {
-            "type": "string",
-            "nullable": true
-          },
-          "accesorios": {
             "type": "string",
             "nullable": true
           }

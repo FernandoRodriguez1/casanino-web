@@ -1,8 +1,10 @@
 using Casanino_API.Data;
 using Casanino_API.DTOs;
 using Casanino_API.Models;
+using Casanino_API.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using SixLabors.ImageSharp;
 
 namespace Casanino_API.Controllers;
 
@@ -11,10 +13,12 @@ namespace Casanino_API.Controllers;
 public class ProductosController : ControllerBase
 {
     private readonly CasaninoDbContext _context;
+    private readonly ImagenR2Service _imagenService;
 
-    public ProductosController(CasaninoDbContext context)
+    public ProductosController(CasaninoDbContext context, ImagenR2Service imagenService)
     {
         _context = context;
+        _imagenService = imagenService;
     }
 
     [HttpGet]
@@ -69,12 +73,30 @@ public class ProductosController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult<ProductoResponse>> CreateProducto([FromBody] CreateProductoRequest dto)
+    public async Task<ActionResult<ProductoResponse>> CreateProducto([FromForm] CreateProductoRequest dto)
     {
         var validationError = await ValidateProducto(dto.Codigo, dto.Modelo, dto.Nombre, dto.CategoriaId, dto.MarcaId);
         if (validationError is not null)
         {
             return validationError;
+        }
+
+        string? imagenKey = null;
+
+        if (dto.Imagen is not null && dto.Imagen.Length > 0)
+        {
+            if (dto.Imagen.Length > ImagenR2Service.MaxFileSize)
+            {
+                return BadRequest(new { message = "La imagen excede el tamaño máximo de 10 MB" });
+            }
+
+            var result = await UploadImagen(dto.Imagen, dto.Codigo, dto.Nombre);
+            if (result.Error is not null)
+            {
+                return result.Error;
+            }
+
+            imagenKey = result.Key;
         }
 
         var producto = new Producto
@@ -83,7 +105,7 @@ public class ProductosController : ControllerBase
             Modelo = dto.Modelo.Trim(),
             Nombre = dto.Nombre.Trim(),
             Descripcion = dto.Descripcion,
-            Imagen = dto.Imagen,
+            Imagen = imagenKey,
             CategoriaId = dto.CategoriaId,
             MarcaId = dto.MarcaId,
             Especificaciones = dto.Especificaciones,
@@ -107,7 +129,7 @@ public class ProductosController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateProducto(int id, [FromBody] UpdateProductoRequest dto)
+    public async Task<IActionResult> UpdateProducto(int id, [FromForm] UpdateProductoRequest dto)
     {
         var producto = await _context.Productos.FindAsync(id);
         if (producto is null)
@@ -121,11 +143,30 @@ public class ProductosController : ControllerBase
             return validationError;
         }
 
+        var previousImage = producto.Imagen;
+        var newImage = producto.Imagen;
+
+        if (dto.Imagen is not null && dto.Imagen.Length > 0)
+        {
+            if (dto.Imagen.Length > ImagenR2Service.MaxFileSize)
+            {
+                return BadRequest(new { message = "La imagen excede el tamaño máximo de 10 MB" });
+            }
+
+            var result = await UploadImagen(dto.Imagen, dto.Codigo, dto.Nombre);
+            if (result.Error is not null)
+            {
+                return result.Error;
+            }
+
+            newImage = result.Key;
+        }
+
         producto.Codigo = dto.Codigo.Trim();
         producto.Modelo = dto.Modelo.Trim();
         producto.Nombre = dto.Nombre.Trim();
         producto.Descripcion = dto.Descripcion;
-        producto.Imagen = dto.Imagen;
+        producto.Imagen = newImage;
         producto.CategoriaId = dto.CategoriaId;
         producto.MarcaId = dto.MarcaId;
         producto.Especificaciones = dto.Especificaciones;
@@ -140,6 +181,11 @@ public class ProductosController : ControllerBase
             return Conflict(new { message = "Ya existe un producto con ese código" });
         }
 
+        if (!string.IsNullOrEmpty(previousImage) && previousImage != newImage)
+        {
+            await DeleteImagenBestEffort(previousImage);
+        }
+
         return NoContent();
     }
 
@@ -152,10 +198,45 @@ public class ProductosController : ControllerBase
             return NotFound(new { message = $"No se encontró el producto con id {id}" });
         }
 
+        var imageKey = producto.Imagen;
+
         _context.Productos.Remove(producto);
         await _context.SaveChangesAsync();
 
+        if (!string.IsNullOrEmpty(imageKey))
+        {
+            await DeleteImagenBestEffort(imageKey);
+        }
+
         return NoContent();
+    }
+
+    private async Task<(string? Key, ActionResult? Error)> UploadImagen(IFormFile file, string codigo, string nombre)
+    {
+        try
+        {
+            var key = await _imagenService.UploadAsync(file, codigo, nombre);
+            return (key, null);
+        }
+        catch (UnknownImageFormatException)
+        {
+            return (null, BadRequest(new { message = "El archivo de imagen no es válido" }));
+        }
+        catch (InvalidImageContentException)
+        {
+            return (null, BadRequest(new { message = "El archivo de imagen está corrupto o no es válido" }));
+        }
+    }
+
+    private async Task DeleteImagenBestEffort(string key)
+    {
+        try
+        {
+            await _imagenService.DeleteAsync(key);
+        }
+        catch (Exception)
+        {
+        }
     }
 
     private async Task<ActionResult?> ValidateProducto(string codigo, string modelo, string nombre, int categoriaId, int marcaId)
