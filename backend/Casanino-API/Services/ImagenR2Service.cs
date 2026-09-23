@@ -47,7 +47,8 @@ public class ImagenR2Service
             slug = StringHelper.Slug(safeFileName);
         }
 
-        return UploadAsync(file, $"productos/{safeCodigo}_{slug}.webp", ct);
+        var unique = Guid.NewGuid().ToString("N")[..8];
+        return UploadAsync(file, $"productos/{safeCodigo}_{slug}_{unique}.webp", ct);
     }
 
     public Task<string> UploadCategoriaAsync(IFormFile file, string nombre, CancellationToken ct = default)

@@ -12,7 +12,7 @@ public class CreateProductoRequest
     public int MarcaId { get; set; }
     public string? Especificaciones { get; set; }
     public string? Accesorios { get; set; }
-    public IFormFile? Imagen { get; set; }
+    public List<IFormFile>? Imagenes { get; set; }
 }
 
 public class UpdateProductoRequest
@@ -25,7 +25,8 @@ public class UpdateProductoRequest
     public int MarcaId { get; set; }
     public string? Especificaciones { get; set; }
     public string? Accesorios { get; set; }
-    public IFormFile? Imagen { get; set; }
+    public List<IFormFile>? Imagenes { get; set; }
+    public List<string>? ImagenesEliminar { get; set; }
 }
 
 public record ProductoResponse(
