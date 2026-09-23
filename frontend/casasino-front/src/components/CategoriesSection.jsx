@@ -148,7 +148,7 @@ function CategoriesSection({ mode, categorias, marcas, counts, active, accent, o
               onScroll={updateArrows}
             >
               {categorias.map((cat) => (
-                <div key={cat.slug} className="collection-segmentos-item">
+                <div key={cat.slug} className={`collection-segmentos-item${cat.marca === 'Crossmaster' ? ' crossmaster' : ''}`}>
                   <button
                     type="button"
                     className={`card-2-link${active === cat.slug ? ' active' : ''}`}

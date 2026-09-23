@@ -1,5 +1,6 @@
 import { lazy, Suspense, useState } from 'react'
 import Navbar from './components/Navbar'
+import Footer from './components/Footer'
 import ProductDetail from './components/ProductDetail'
 import CategoriesSection from './components/CategoriesSection'
 import StatusBox from './components/StatusBox'
@@ -189,9 +190,7 @@ return (
         )}
       </main>
 
-      <footer className="footer">
-        <p>Casa Nino · Tortugas Santa Fe</p>
-      </footer>
+      <Footer marcas={marcas} onSelectBrand={setBrand} />
     </>
   )
 }

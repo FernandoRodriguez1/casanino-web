@@ -8,4 +8,12 @@ export default defineConfig({
     react(),
     babel({ presets: [reactCompilerPreset()] })
   ],
+  server: {
+    proxy: {
+      '/api': {
+        target: 'https://casanino-web.onrender.com',
+        changeOrigin: true,
+      },
+    },
+  },
 })

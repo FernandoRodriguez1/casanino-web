@@ -1,4 +1,4 @@
-const BASE = import.meta.env.VITE_API_URL || 'https://casanino-web.onrender.com'
+const BASE = import.meta.env.VITE_API_URL ?? 'https://casanino-web.onrender.com'
 
 export class ApiError extends Error {
   constructor(status, message) {
