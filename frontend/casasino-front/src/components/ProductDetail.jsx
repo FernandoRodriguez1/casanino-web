@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { getBrandColor, initials, isLightColor } from '../utils/brand'
+import { productWhatsappMessage, whatsappUrl } from '../utils/contact'
 
 function formatSpecs(text) {
   if (!text) return []
@@ -82,6 +83,15 @@ function DetailInfo({ producto, onBack, onEdit }) {
             {producto.modelo && <span>Modelo: <strong>{producto.modelo}</strong></span>}
           </div>
           {producto.descripcion && <p className="detail-desc">{producto.descripcion}</p>}
+
+          <a
+            className="detail-wa"
+            href={whatsappUrl(productWhatsappMessage(producto))}
+            target="_blank"
+            rel="noreferrer"
+          >
+            Consultar a WhatsApp
+          </a>
         </div>
       </div>
 

@@ -1,51 +1,38 @@
+import { WHATSAPP_NUMBER, INSTAGRAM_URL } from '../utils/contact'
+
 const CONTACT = {
-  phone: '+54 9 11 0000-0000',
-  whatsapp: 'https://wa.me/5491100000000',
-  email: 'info@casanino.com.ar',
-  address: 'Tortugas, Santa Fe, Argentina',
+  whatsapp: {
+    label: '+54 9 3471 505442',
+    url: `https://wa.me/${WHATSAPP_NUMBER}`,
+  },
+  instagram: {
+    label: '@casaninotortugas',
+    url: INSTAGRAM_URL,
+  },
+  direccion: 'Blvd. Juarez Celman 751, S2512 Tortugas, Santa Fe',
+  ubicacion: 'Tortugas - Santa Fe',
 }
 
-const SOCIAL = [
-  { label: 'WhatsApp', href: 'https://wa.me/5491100000000' },
-  { label: 'Instagram', href: '#' },
-  { label: 'Facebook', href: '#' },
-]
-
 function Footer({ marcas, onSelectBrand }) {
-  const year = new Date().getFullYear()
-
-  const goBrand = (key) => {
-    onSelectBrand(key)
-    document.querySelector('.catalog')?.scrollIntoView({ behavior: 'smooth' })
-  }
-
   return (
     <footer className="footer">
-      <div className="footer-inner">
-        <div className="footer-col footer-brand">
-          <div className="brand" onClick={() => goBrand('all')}>
-            <img className="brand-logo" src="/img/logo_casa_nino.png" alt="Casa Nino" />
-            <div className="brand-text">
-              <strong>Casa Nino</strong>
-              <small>Catálogo de herramientas</small>
-            </div>
-          </div>
-          <p className="footer-desc">
-            Herramientas y ferretería industrial en Tortugas, Santa Fe. Consultá el catálogo completo de nuestras marcas.
-          </p>
+      <div className="footer-grid">
+        <div className="footer-col">
+          <strong className="footer-title">Casa Nino</strong>
+          <p className="footer-subtitle">Catálogo de herramientas</p>
         </div>
 
-        <div className="footer-col footer-marcas">
-          <h4>Marcas</h4>
-          <ul>
+        <div className="footer-col">
+          <strong className="footer-title">Marcas</strong>
+          <ul className="footer-links">
             <li>
-              <button type="button" onClick={() => goBrand('all')}>
+              <button type="button" onClick={() => onSelectBrand('all')}>
                 Todos los productos
               </button>
             </li>
             {marcas.map((m) => (
               <li key={m.nombre}>
-                <button type="button" onClick={() => goBrand(m.nombre)}>
+                <button type="button" onClick={() => onSelectBrand(m.nombre)}>
                   {m.nombre}
                 </button>
               </li>
@@ -53,40 +40,28 @@ function Footer({ marcas, onSelectBrand }) {
           </ul>
         </div>
 
-        <div className="footer-col footer-contact">
-          <h4>Contacto</h4>
-          <ul>
+        <div className="footer-col">
+          <strong className="footer-title">Contacto</strong>
+          <ul className="footer-links">
             <li>
-              <span>Teléfono / WhatsApp</span>
-              <a href={`tel:${CONTACT.phone.replace(/[^+\d]/g, '')}`}>{CONTACT.phone}</a>
+              <a href={CONTACT.whatsapp.url} target="_blank" rel="noreferrer">
+                WhatsApp: {CONTACT.whatsapp.label}
+              </a>
             </li>
             <li>
-              <span>Email</span>
-              <a href={`mailto:${CONTACT.email}`}>{CONTACT.email}</a>
+              <a href={CONTACT.instagram.url} target="_blank" rel="noreferrer">
+                Instagram: {CONTACT.instagram.label}
+              </a>
             </li>
-            <li>
-              <span>Dirección</span>
-              <p>{CONTACT.address}</p>
-            </li>
-          </ul>
-        </div>
-
-        <div className="footer-col footer-social">
-          <h4>Seguinos</h4>
-          <ul>
-            {SOCIAL.map((s) => (
-              <li key={s.label}>
-                <a href={s.href} target="_blank" rel="noreferrer">
-                  {s.label}
-                </a>
-              </li>
-            ))}
+            <li>{CONTACT.direccion}</li>
+            <li>{CONTACT.ubicacion}</li>
           </ul>
         </div>
       </div>
 
       <div className="footer-bottom">
-        <p>© {year} Casa Nino · Todos los derechos reservados</p>
+        <p>Casa Nino · {CONTACT.ubicacion}</p>
+        <p>© {new Date().getFullYear()} Casa Nino</p>
       </div>
     </footer>
   )

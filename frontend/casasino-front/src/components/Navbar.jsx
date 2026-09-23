@@ -1,22 +1,14 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { brandMeta, isLightColor } from '../utils/brand'
 
-function Navbar({
-  marcas,
-  activeBrand,
-  activeCategoria,
-  categorias,
-  onSelectBrand,
-  onSelectCat,
-  search,
-  onSearch,
-  counts,
-  loading,
-  showAdmin,
-  onAdmin,
-}) {
-  const [menuOpen, setMenuOpen] = useState(false)
-  const [openBrand, setOpenBrand] = useState(null)
+function Navbar({ marcas, activeBrand, onSelectBrand, search, onSearch, counts, loading, showAdmin, onAdmin }) {
+  const [open, setOpen] = useState(false)
+  const innerRef = useRef(null)
+
+  const tabs = [
+    { key: 'all', label: 'Todos' },
+    ...marcas.map((m) => ({ key: m.nombre, label: m.nombre })),
+  ]
 
   const tabStyle = (key, active) => {
     if (!active) return undefined
@@ -27,31 +19,26 @@ function Navbar({
     }
   }
 
-  const closeMenu = () => setMenuOpen(false)
+  const close = () => setOpen(false)
 
-  const selectAll = () => {
-    setMenuOpen(false)
-    onSelectBrand('all')
-  }
+  useEffect(() => {
+    if (!open) return undefined
+    const onDoc = (e) => {
+      if (innerRef.current && !innerRef.current.contains(e.target)) close()
+    }
+    document.addEventListener('pointerdown', onDoc)
+    return () => document.removeEventListener('pointerdown', onDoc)
+  }, [open])
 
-  const selectBrand = (key) => {
-    onSelectBrand(key)
-    setOpenBrand(key)
-  }
-
-  const toggleBrandCats = (key) => {
-    setOpenBrand((v) => (v === key ? null : key))
-  }
-
-  const selectCategory = (slug) => {
-    setMenuOpen(false)
-    onSelectCat(slug)
+  const pick = (fn, arg) => {
+    close()
+    fn(arg)
   }
 
   return (
-    <header className="navbar">
-      <div className="navbar-inner">
-        <div className="brand" onClick={selectAll}>
+    <header className={`navbar${open ? ' nav-open' : ''}`}>
+      <div className="navbar-inner" ref={innerRef}>
+        <div className="brand" onClick={() => pick(onSelectBrand, 'all')}>
           <img className="brand-logo" src="/img/logo_casa_nino.png" alt="Casa Nino" />
           <div className="brand-text">
             <strong>Casa Nino</strong>
@@ -74,9 +61,9 @@ function Navbar({
             <button
               key={m.nombre}
               type="button"
-              className={`brand-tab${activeBrand === m.nombre ? ' active' : ''}`}
-              style={tabStyle(m.nombre, activeBrand === m.nombre)}
-              onClick={() => onSelectBrand(m.nombre)}
+              className={`brand-tab${activeBrand === tab.key ? ' active' : ''}`}
+              style={tabStyle(tab.key, activeBrand === tab.key)}
+              onClick={() => pick(onSelectBrand, tab.key)}
               disabled={loading}
             >
               <span>{m.nombre}</span>
@@ -109,19 +96,17 @@ function Navbar({
 
         <button
           type="button"
-          className={`nav-burger${menuOpen ? ' open' : ''}`}
-          onClick={() => setMenuOpen((v) => !v)}
-          aria-label={menuOpen ? 'Cerrar menú' : 'Abrir menú'}
-          aria-expanded={menuOpen}
+          className="nav-burger"
+          aria-label={open ? 'Cerrar menú' : 'Abrir menú'}
+          aria-expanded={open}
+          onClick={() => setOpen((v) => !v)}
         >
           <span />
           <span />
           <span />
         </button>
-      </div>
 
-      <div className={`nav-menu${menuOpen ? ' open' : ''}`} aria-hidden={!menuOpen}>
-        <div className="nav-menu-inner">
+        <div className={`nav-menu${open ? ' open' : ''}`}>
           <div className="search">
             <input
               type="text"
@@ -138,88 +123,30 @@ function Navbar({
             )}
           </div>
 
-          <nav className="nav-menu-nav" aria-label="Marcas y categorías">
-            <button
-              type="button"
-              className={`brand-tab nav-menu-all${activeBrand === 'all' && !activeCategoria ? ' active' : ''}`}
-              onClick={selectAll}
-              disabled={loading}
-            >
-              <span>Todos los productos</span>
-              <span className="count">{loading ? '…' : (counts.all ?? 0)}</span>
-            </button>
-
-            {marcas.map((m) => {
-              const cats = categorias.filter((c) => c.marca === m.nombre)
-              const brandActive = activeBrand === m.nombre
-              return (
-                <div className="nav-menu-group" key={m.nombre}>
-                  <div className="nav-menu-brand-row">
-                    <button
-                      type="button"
-                      className={`brand-tab nav-menu-brand${brandActive ? ' active' : ''}`}
-                      style={tabStyle(m.nombre, brandActive)}
-                      onClick={() => selectBrand(m.nombre)}
-                      disabled={loading}
-                    >
-                      <span>{m.nombre}</span>
-                      <span className="count">{loading ? '…' : (counts[m.nombre] ?? 0)}</span>
-                    </button>
-                    {cats.length > 0 && (
-                      <button
-                        type="button"
-                        className={`nav-chevron${openBrand === m.nombre ? ' open' : ''}`}
-                        onClick={() => toggleBrandCats(m.nombre)}
-                        aria-label={`Categorías de ${m.nombre}`}
-                        aria-expanded={openBrand === m.nombre}
-                      >
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                          <path d="m6 9 6 6 6-6" />
-                        </svg>
-                      </button>
-                    )}
-                  </div>
-
-                  {openBrand === m.nombre && cats.length > 0 && (
-                    <div className={`nav-menu-cats${openBrand === m.nombre ? ' open' : ''}`}>
-                      {cats.map((c) => {
-                        const catActive = brandActive && activeCategoria === c.slug
-                        return (
-                          <button
-                            key={c.slug}
-                            type="button"
-                            className={`brand-tab nav-menu-cat${catActive ? ' active' : ''}`}
-                            style={tabStyle(m.nombre, catActive)}
-                            onClick={() => selectCategory(c.slug)}
-                          >
-                            <span>{c.nombre}</span>
-                            <span className="count">{c.count ?? 0}</span>
-                          </button>
-                        )
-                      })}
-                    </div>
-                  )}
-                </div>
-              )
-            })}
-          </nav>
-
-          {showAdmin && (
-            <button
-              type="button"
-              className="brand-tab admin-link nav-menu-admin"
-              onClick={() => {
-                setMenuOpen(false)
-                onAdmin()
-              }}
-            >
-              <span>Panel</span>
-            </button>
-          )}
-
-          <button type="button" className="nav-menu-close" onClick={closeMenu}>
-            Cerrar
-          </button>
+          <div className="nav-menu-list">
+            {tabs.map((tab) => (
+              <button
+                key={tab.key}
+                type="button"
+                className={`nav-menu-btn${activeBrand === tab.key ? ' active' : ''}`}
+                style={tabStyle(tab.key, activeBrand === tab.key)}
+                onClick={() => pick(onSelectBrand, tab.key)}
+                disabled={loading}
+              >
+                <span>{tab.label}</span>
+                <span className="count">{loading ? '…' : (counts[tab.key] ?? 0)}</span>
+              </button>
+            ))}
+            {showAdmin && (
+              <button
+                type="button"
+                className="nav-menu-btn nav-menu-cta"
+                onClick={pick(onAdmin)}
+              >
+                <span>Panel de administración</span>
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </header>

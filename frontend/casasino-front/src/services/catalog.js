@@ -2,7 +2,7 @@ import { normalizeBrand } from '../utils/brand'
 import { sortImagesForDisplay } from '../utils/images'
 import { cacheGet, cacheSet } from '../utils/cache'
 
-const BASE = import.meta.env.VITE_API_URL || 'https://casanino-web.onrender.com'
+const BASE = import.meta.env.VITE_API_URL ?? 'https://casanino-web.onrender.com'
 
 const K_PRODUCTOS = 'productos_v1'
 const K_CATEGORIAS = 'categorias_v1'

@@ -1,5 +1,6 @@
 import { lazy, Suspense, useState } from 'react'
 import Navbar from './components/Navbar'
+import Footer from './components/Footer'
 import ProductDetail from './components/ProductDetail'
 import CategoriesSection from './components/CategoriesSection'
 import StatusBox from './components/StatusBox'

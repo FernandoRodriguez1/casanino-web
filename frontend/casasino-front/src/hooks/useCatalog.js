@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   loadCatalogData,
   normalizeProducto,
@@ -22,7 +22,10 @@ export function useCatalog() {
   const [selectedId, setSelectedId] = useState(null)
   const [reloadTick, setReloadTick] = useState(0)
 
+  const savedScrollRef = useRef(0)
+
   const LIMITED_PER_BRAND = 16
+  const INITIAL_IN_LIMIT = 38
 
   const reload = useCallback(() => {
     setStatus('loading')
@@ -109,7 +112,7 @@ export function useCatalog() {
       seen[p.marcaNombre] = (seen[p.marcaNombre] ?? 0) + 1
       if (seen[p.marcaNombre] <= LIMITED_PER_BRAND) blocks.push(p)
     }
-    return blocks
+    return blocks.slice(0, INITIAL_IN_LIMIT)
   }, [allProducts, fullCatalog, activeBrand, sortedMarcas])
 
   const counts = useMemo(() => {
@@ -121,14 +124,23 @@ export function useCatalog() {
   const enrichedCategorias = useMemo(() => {
     const marca = {}
     const count = {}
+    const img = {}
     for (const p of allProducts) {
       if (p.categoriaId && !(p.categoriaId in marca)) marca[p.categoriaId] = p.marcaNombre
       count[p.categoriaId] = (count[p.categoriaId] ?? 0) + 1
+      if (
+        p.marcaNombre === 'Crossmaster' &&
+        p.imagenes?.length &&
+        !(p.categoriaId in img)
+      ) {
+        img[p.categoriaId] = p.imagenes.find((u) => !!u) ?? null
+      }
     }
     return categorias.map((c) => ({
       ...c,
       marca: marca[c.id] ?? null,
       count: count[c.id] ?? 0,
+      imagen: marca[c.id] === 'Crossmaster' ? (img[c.id] ?? c.imagen) : c.imagen,
     }))
   }, [categorias, allProducts])
 
@@ -187,6 +199,7 @@ export function useCatalog() {
   }
 
   const openDetail = (id) => {
+    savedScrollRef.current = window.scrollY
     setSelectedId(id)
     scrollTop()
   }
@@ -194,6 +207,15 @@ export function useCatalog() {
   const closeDetail = () => {
     setSelectedId(null)
     scrollTop()
+    const y = savedScrollRef.current
+    savedScrollRef.current = 0
+    if (y > 0) {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          window.scrollTo(0, y)
+        })
+      })
+    }
   }
 
   const clearCategoria = () => setActiveCategoria(null)
