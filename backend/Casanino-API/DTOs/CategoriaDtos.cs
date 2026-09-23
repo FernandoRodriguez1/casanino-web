@@ -1,5 +1,17 @@
+using Microsoft.AspNetCore.Http;
+
 namespace Casanino_API.DTOs;
 
-public record CreateCategoriaRequest(string Nombre);
-public record UpdateCategoriaRequest(string Nombre);
-public record CategoriaResponse(int Id, string Nombre);
+public class CreateCategoriaRequest
+{
+    public string Nombre { get; set; } = string.Empty;
+    public IFormFile? Imagen { get; set; }
+}
+
+public class UpdateCategoriaRequest
+{
+    public string Nombre { get; set; } = string.Empty;
+    public IFormFile? Imagen { get; set; }
+}
+
+public record CategoriaResponse(int Id, string Nombre, string? Imagen);

@@ -4,10 +4,10 @@ public class Producto
 {
     public int Id { get; set; }
     public string Codigo { get; set; } = string.Empty;
-    public string Modelo { get; set; } = string.Empty;
+    public string? Modelo { get; set; }
     public string Nombre { get; set; } = string.Empty;
     public string? Descripcion { get; set; }
-    public string? Imagen { get; set; }
+    public List<string>? Imagenes { get; set; }
     public int CategoriaId { get; set; }
     public int MarcaId { get; set; }
     public string? Especificaciones { get; set; }

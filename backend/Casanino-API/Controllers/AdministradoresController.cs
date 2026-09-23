@@ -1,12 +1,14 @@
 using Casanino_API.Data;
 using Casanino_API.DTOs;
 using Casanino_API.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace Casanino_API.Controllers;
 
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class AdministradoresController : ControllerBase

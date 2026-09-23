@@ -1,11 +1,13 @@
 using Casanino_API.Data;
 using Casanino_API.DTOs;
 using Casanino_API.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace Casanino_API.Controllers;
 
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class MarcasController : ControllerBase
@@ -18,6 +20,7 @@ public class MarcasController : ControllerBase
     }
 
     [HttpGet]
+    [AllowAnonymous]
     public async Task<ActionResult<IEnumerable<MarcaResponse>>> GetMarcas()
     {
         var marcas = await _context.Marcas
@@ -29,6 +32,7 @@ public class MarcasController : ControllerBase
     }
 
     [HttpGet("{id}")]
+    [AllowAnonymous]
     public async Task<ActionResult<MarcaResponse>> GetMarca(int id)
     {
         var marca = await _context.Marcas.FindAsync(id);
