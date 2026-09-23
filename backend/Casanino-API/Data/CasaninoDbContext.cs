@@ -24,6 +24,7 @@ public class CasaninoDbContext : DbContext
             entity.Property(c => c.Id).HasColumnName("id").UseSerialColumn();
             entity.Property(c => c.Nombre).HasColumnName("nombre").HasMaxLength(100).IsRequired();
             entity.HasIndex(c => c.Nombre).IsUnique();
+            entity.Property(c => c.Imagen).HasColumnName("imagen");
         });
 
         modelBuilder.Entity<Marca>(entity =>
@@ -52,10 +53,10 @@ public class CasaninoDbContext : DbContext
             entity.Property(p => p.Id).HasColumnName("id").UseSerialColumn();
             entity.Property(p => p.Codigo).HasColumnName("codigo").HasMaxLength(100).IsRequired();
             entity.HasIndex(p => p.Codigo).IsUnique();
-            entity.Property(p => p.Modelo).HasColumnName("modelo").HasMaxLength(100).IsRequired();
+            entity.Property(p => p.Modelo).HasColumnName("modelo").HasMaxLength(100);
             entity.Property(p => p.Nombre).HasColumnName("nombre").HasMaxLength(200).IsRequired();
             entity.Property(p => p.Descripcion).HasColumnName("descripcion");
-            entity.Property(p => p.Imagen).HasColumnName("imagen");
+            entity.Property(p => p.Imagenes).HasColumnName("imagen");
             entity.Property(p => p.CategoriaId).HasColumnName("categoria_id").IsRequired();
             entity.Property(p => p.MarcaId).HasColumnName("marca_id").IsRequired();
             entity.Property(p => p.Especificaciones).HasColumnName("especificaciones");

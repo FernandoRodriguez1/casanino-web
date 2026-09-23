@@ -2,12 +2,14 @@ using Casanino_API.Data;
 using Casanino_API.DTOs;
 using Casanino_API.Models;
 using Casanino_API.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SixLabors.ImageSharp;
 
 namespace Casanino_API.Controllers;
 
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class ProductosController : ControllerBase
@@ -22,6 +24,7 @@ public class ProductosController : ControllerBase
     }
 
     [HttpGet]
+    [AllowAnonymous]
     public async Task<ActionResult<IEnumerable<ProductoResponse>>> GetProductos()
     {
         var productos = await _context.Productos
@@ -32,7 +35,7 @@ public class ProductosController : ControllerBase
                 p.Modelo,
                 p.Nombre,
                 p.Descripcion,
-                p.Imagen,
+                p.Imagenes,
                 p.CategoriaId,
                 p.Categoria.Nombre,
                 p.MarcaId,
@@ -45,6 +48,7 @@ public class ProductosController : ControllerBase
     }
 
     [HttpGet("{id}")]
+    [AllowAnonymous]
     public async Task<ActionResult<ProductoResponse>> GetProducto(int id)
     {
         var producto = await _context.Productos
@@ -63,7 +67,7 @@ public class ProductosController : ControllerBase
             producto.Modelo,
             producto.Nombre,
             producto.Descripcion,
-            producto.Imagen,
+            producto.Imagenes,
             producto.CategoriaId,
             producto.Categoria.Nombre,
             producto.MarcaId,
@@ -75,7 +79,7 @@ public class ProductosController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<ProductoResponse>> CreateProducto([FromForm] CreateProductoRequest dto)
     {
-        var validationError = await ValidateProducto(dto.Codigo, dto.Modelo, dto.Nombre, dto.CategoriaId, dto.MarcaId);
+        var validationError = await ValidateProducto(dto.Codigo, dto.Nombre, dto.CategoriaId, dto.MarcaId);
         if (validationError is not null)
         {
             return validationError;
@@ -102,10 +106,10 @@ public class ProductosController : ControllerBase
         var producto = new Producto
         {
             Codigo = dto.Codigo.Trim(),
-            Modelo = dto.Modelo.Trim(),
+            Modelo = string.IsNullOrWhiteSpace(dto.Modelo) ? null : dto.Modelo.Trim(),
             Nombre = dto.Nombre.Trim(),
             Descripcion = dto.Descripcion,
-            Imagen = imagenKey,
+            Imagenes = imagenKey is null ? null : [_imagenService.BuildPublicUrl(imagenKey)],
             CategoriaId = dto.CategoriaId,
             MarcaId = dto.MarcaId,
             Especificaciones = dto.Especificaciones,
@@ -137,14 +141,13 @@ public class ProductosController : ControllerBase
             return NotFound(new { message = $"No se encontró el producto con id {id}" });
         }
 
-        var validationError = await ValidateProducto(dto.Codigo, dto.Modelo, dto.Nombre, dto.CategoriaId, dto.MarcaId);
+        var validationError = await ValidateProducto(dto.Codigo, dto.Nombre, dto.CategoriaId, dto.MarcaId);
         if (validationError is not null)
         {
             return validationError;
         }
 
-        var previousImage = producto.Imagen;
-        var newImage = producto.Imagen;
+        var previousImages = producto.Imagenes;
 
         if (dto.Imagen is not null && dto.Imagen.Length > 0)
         {
@@ -159,14 +162,13 @@ public class ProductosController : ControllerBase
                 return result.Error;
             }
 
-            newImage = result.Key;
+            producto.Imagenes = [_imagenService.BuildPublicUrl(result.Key!)];
         }
 
         producto.Codigo = dto.Codigo.Trim();
-        producto.Modelo = dto.Modelo.Trim();
+        producto.Modelo = string.IsNullOrWhiteSpace(dto.Modelo) ? null : dto.Modelo.Trim();
         producto.Nombre = dto.Nombre.Trim();
         producto.Descripcion = dto.Descripcion;
-        producto.Imagen = newImage;
         producto.CategoriaId = dto.CategoriaId;
         producto.MarcaId = dto.MarcaId;
         producto.Especificaciones = dto.Especificaciones;
@@ -181,9 +183,12 @@ public class ProductosController : ControllerBase
             return Conflict(new { message = "Ya existe un producto con ese código" });
         }
 
-        if (!string.IsNullOrEmpty(previousImage) && previousImage != newImage)
+        if (previousImages is not null && producto.Imagenes is not null && !producto.Imagenes.SequenceEqual(previousImages))
         {
-            await DeleteImagenBestEffort(previousImage);
+            foreach (var url in previousImages)
+            {
+                await DeleteImagenBestEffort(_imagenService.ExtractKey(url));
+            }
         }
 
         return NoContent();
@@ -198,14 +203,17 @@ public class ProductosController : ControllerBase
             return NotFound(new { message = $"No se encontró el producto con id {id}" });
         }
 
-        var imageKey = producto.Imagen;
+        var imageKeys = producto.Imagenes;
 
         _context.Productos.Remove(producto);
         await _context.SaveChangesAsync();
 
-        if (!string.IsNullOrEmpty(imageKey))
+        if (imageKeys is not null)
         {
-            await DeleteImagenBestEffort(imageKey);
+            foreach (var url in imageKeys)
+            {
+                await DeleteImagenBestEffort(_imagenService.ExtractKey(url));
+            }
         }
 
         return NoContent();
@@ -215,7 +223,7 @@ public class ProductosController : ControllerBase
     {
         try
         {
-            var key = await _imagenService.UploadAsync(file, codigo, nombre);
+            var key = await _imagenService.UploadProductoAsync(file, codigo, nombre);
             return (key, null);
         }
         catch (UnknownImageFormatException)
@@ -239,16 +247,11 @@ public class ProductosController : ControllerBase
         }
     }
 
-    private async Task<ActionResult?> ValidateProducto(string codigo, string modelo, string nombre, int categoriaId, int marcaId)
+    private async Task<ActionResult?> ValidateProducto(string codigo, string nombre, int categoriaId, int marcaId)
     {
         if (string.IsNullOrWhiteSpace(codigo))
         {
             return BadRequest(new { message = "El código es obligatorio" });
-        }
-
-        if (string.IsNullOrWhiteSpace(modelo))
-        {
-            return BadRequest(new { message = "El modelo es obligatorio" });
         }
 
         if (string.IsNullOrWhiteSpace(nombre))
@@ -279,7 +282,7 @@ public class ProductosController : ControllerBase
                 p.Modelo,
                 p.Nombre,
                 p.Descripcion,
-                p.Imagen,
+                p.Imagenes,
                 p.CategoriaId,
                 p.Categoria.Nombre,
                 p.MarcaId,

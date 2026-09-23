@@ -22,11 +22,52 @@ public class ImagenR2Service
         _options = options;
     }
 
-    public async Task<string> UploadAsync(IFormFile file, string codigo, string nombre, CancellationToken ct = default)
+    public string BuildPublicUrl(string key) =>
+        $"{_options.PublicUrl.TrimEnd('/')}/{key}";
+
+    public string ExtractKey(string storedValue)
+    {
+        if (storedValue.StartsWith("http://", StringComparison.OrdinalIgnoreCase)
+            || storedValue.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+        {
+            return new Uri(storedValue).AbsolutePath.TrimStart('/');
+        }
+
+        return storedValue.TrimStart('/');
+    }
+
+    public Task<string> UploadProductoAsync(IFormFile file, string codigo, string nombre, CancellationToken ct = default)
     {
         var safeFileName = StringHelper.SanitizeFileName(file.FileName);
-        var key = BuildKey(codigo, nombre, safeFileName);
+        var safeCodigo = StringHelper.RemoveDiacritics(codigo).Trim().ToLowerInvariant();
+        var slug = StringHelper.Slug(nombre);
 
+        if (string.IsNullOrEmpty(slug))
+        {
+            slug = StringHelper.Slug(safeFileName);
+        }
+
+        return UploadAsync(file, $"productos/{safeCodigo}_{slug}.webp", ct);
+    }
+
+    public Task<string> UploadCategoriaAsync(IFormFile file, string nombre, CancellationToken ct = default)
+    {
+        var safeFileName = StringHelper.SanitizeFileName(file.FileName);
+        var slug = StringHelper.Slug(nombre);
+
+        if (string.IsNullOrEmpty(slug))
+        {
+            slug = StringHelper.Slug(safeFileName);
+        }
+
+        return UploadAsync(file, $"categoria/{slug}.webp", ct);
+    }
+
+    public Task DeleteAsync(string key, CancellationToken ct = default) =>
+        _s3.DeleteObjectAsync(_options.BucketName, key, ct);
+
+    private async Task<string> UploadAsync(IFormFile file, string key, CancellationToken ct)
+    {
         using var input = new MemoryStream();
         await file.CopyToAsync(input, ct);
         input.Position = 0;
@@ -48,9 +89,6 @@ public class ImagenR2Service
         return key;
     }
 
-    public Task DeleteAsync(string key, CancellationToken ct = default) =>
-        _s3.DeleteObjectAsync(_options.BucketName, key, ct);
-
     private async Task<Stream> OptimizeAsync(Stream input, CancellationToken ct)
     {
         using var image = await Image.LoadAsync(input, ct);
@@ -66,18 +104,5 @@ public class ImagenR2Service
         output.Position = 0;
 
         return output;
-    }
-
-    private static string BuildKey(string codigo, string nombre, string safeFileName)
-    {
-        var safeCodigo = StringHelper.RemoveDiacritics(codigo).Trim().ToLowerInvariant();
-        var slug = StringHelper.Slug(nombre);
-
-        if (string.IsNullOrEmpty(slug))
-        {
-            slug = StringHelper.Slug(safeFileName);
-        }
-
-        return $"productos/{safeCodigo}_{slug}.webp";
     }
 }

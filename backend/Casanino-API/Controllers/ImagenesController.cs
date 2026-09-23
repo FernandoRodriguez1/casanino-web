@@ -1,37 +1,39 @@
 using Amazon.S3;
-using Casanino_API.Config;
+using Casanino_API.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Casanino_API.Controllers;
 
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class ImagenesController : ControllerBase
 {
-    private readonly IAmazonS3 _s3;
-    private readonly CloudflareR2Options _r2Options;
+    private readonly ImagenR2Service _imagenService;
 
-    public ImagenesController(IAmazonS3 s3, CloudflareR2Options r2Options)
+    public ImagenesController(ImagenR2Service imagenService)
     {
-        _s3 = s3;
-        _r2Options = r2Options;
+        _imagenService = imagenService;
     }
 
     [HttpDelete]
-    public async Task<IActionResult> Delete([FromQuery] string key)
+    public async Task<IActionResult> Delete([FromQuery] string url)
     {
-        if (string.IsNullOrWhiteSpace(key))
+        if (string.IsNullOrWhiteSpace(url))
         {
-            return BadRequest(new { message = "La clave de la imagen es obligatoria" });
+            return BadRequest(new { message = "La url de la imagen es obligatoria" });
         }
+
+        var key = _imagenService.ExtractKey(url.Trim());
 
         try
         {
-            await _s3.DeleteObjectAsync(_r2Options.BucketName, key.Trim());
+            await _imagenService.DeleteAsync(key);
         }
         catch (AmazonS3Exception ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
         {
-            return NotFound(new { message = $"No se encontró la imagen con clave {key}" });
+            return NotFound(new { message = $"No se encontró la imagen {url}" });
         }
         catch (Exception ex)
         {
