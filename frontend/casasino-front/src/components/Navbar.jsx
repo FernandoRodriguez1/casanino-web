@@ -61,9 +61,9 @@ function Navbar({ marcas, activeBrand, onSelectBrand, search, onSearch, counts, 
             <button
               key={m.nombre}
               type="button"
-              className={`brand-tab${activeBrand === tab.key ? ' active' : ''}`}
-              style={tabStyle(tab.key, activeBrand === tab.key)}
-              onClick={() => pick(onSelectBrand, tab.key)}
+              className={`brand-tab${activeBrand === m.nombre ? ' active' : ''}`}
+              style={tabStyle(m.nombre, activeBrand === m.nombre)}
+              onClick={() => pick(onSelectBrand, m.nombre)}
               disabled={loading}
             >
               <span>{m.nombre}</span>

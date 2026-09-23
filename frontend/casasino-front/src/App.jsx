@@ -36,7 +36,7 @@ function App() {
     if (next !== 'login' && clean !== '/') {
       window.history.replaceState(null, '', '/')
     }
-setViewState(next)
+    setViewState(next)
   }
 
   const {
