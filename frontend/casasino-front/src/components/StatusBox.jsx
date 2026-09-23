@@ -11,7 +11,7 @@ function StatusBox({ status }) {
     return (
       <section className="status-box">
         <h2>No se pudieron cargar los productos</h2>
-        <p>Verificá que el archivo /data/productos.json exista.</p>
+        <p>Verificá la conexión con la API o intentá de nuevo en unos segundos.</p>
       </section>
     )
   }

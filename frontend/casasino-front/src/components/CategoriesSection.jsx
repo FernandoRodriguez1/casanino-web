@@ -156,7 +156,11 @@ function CategoriesSection({ mode, categorias, marcas, counts, active, accent, o
                   >
                     <div className="card-2-container">
                       <div className="card-2-img-overlay">
-                        <img src={`/${cat.imagen}`} alt={cat.nombre} loading="eager" className="card-2-img" />
+                        {cat.imagen ? (
+                          <img src={cat.imagen} alt={cat.nombre} loading="eager" className="card-2-img" />
+                        ) : (
+                          <div className="card-2-img card-2-img-fallback" />
+                        )}
                         <div className="card-2-opacity-layer" />
                       </div>
                       <div className="card-2-info">

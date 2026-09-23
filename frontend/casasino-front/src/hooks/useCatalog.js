@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { fetchProductos, fetchCategorias } from '../services/catalog'
+import { fetchProductos, fetchCategorias, fetchMarcas } from '../services/catalog'
 
 const scrollTop = () => window.scrollTo(0, 0)
 
@@ -10,6 +10,7 @@ export function useCatalog() {
   const [allProducts, setAllProducts] = useState([])
   const [fullCatalog, setFullCatalog] = useState(false)
   const [categorias, setCategorias] = useState([])
+  const [marcas, setMarcas] = useState([])
   const [status, setStatus] = useState('loading')
   const [selectedId, setSelectedId] = useState(null)
 
@@ -44,6 +45,18 @@ export function useCatalog() {
     }
   }, [])
 
+  useEffect(() => {
+    let alive = true
+    fetchMarcas()
+      .then((m) => {
+        if (alive) setMarcas(m)
+      })
+      .catch((err) => console.error('Error cargando marcas:', err))
+    return () => {
+      alive = false
+    }
+  }, [])
+
   const products = useMemo(() => {
     if (fullCatalog || activeBrand !== 'all') return allProducts
     const seen = {}
@@ -53,12 +66,10 @@ export function useCatalog() {
     })
   }, [allProducts, fullCatalog, activeBrand])
 
-  const marcas = useMemo(() => {
-    const names = [...new Set(allProducts.map((p) => p.marcaNombre))]
-    return names
-      .sort((a, b) => a.localeCompare(b))
-      .map((name, i) => ({ id: i + 1, nombre: name }))
-  }, [allProducts])
+  const sortedMarcas = useMemo(
+    () => [...marcas].sort((a, b) => a.nombre.localeCompare(b.nombre)),
+    [marcas]
+  )
 
   const counts = useMemo(() => {
     const acc = { all: allProducts.length }
@@ -66,22 +77,36 @@ export function useCatalog() {
     return acc
   }, [allProducts])
 
+  const enrichedCategorias = useMemo(() => {
+    const marca = {}
+    const count = {}
+    for (const p of allProducts) {
+      if (p.categoriaId && !(p.categoriaId in marca)) marca[p.categoriaId] = p.marcaNombre
+      count[p.categoriaId] = (count[p.categoriaId] ?? 0) + 1
+    }
+    return categorias.map((c) => ({
+      ...c,
+      marca: marca[c.id] ?? null,
+      count: count[c.id] ?? 0,
+    }))
+  }, [categorias, allProducts])
+
   const visibleCategorias = useMemo(() => {
-    if (activeBrand === 'all') return categorias
-    return categorias.filter((c) => c.marca === activeBrand)
-  }, [categorias, activeBrand])
+    if (activeBrand === 'all') return enrichedCategorias
+    return enrichedCategorias.filter((c) => c.marca === activeBrand)
+  }, [enrichedCategorias, activeBrand])
 
   const categoriaMeta = useMemo(
-    () => categorias.find((c) => c.slug === activeCategoria) ?? null,
-    [categorias, activeCategoria]
+    () => enrichedCategorias.find((c) => c.slug === activeCategoria) ?? null,
+    [enrichedCategorias, activeCategoria]
   )
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
-    const cat = categoriaMeta?.categoria
+    const catId = categoriaMeta?.id
     return products.filter((p) => {
       if (activeBrand !== 'all' && p.marcaNombre !== activeBrand) return false
-      if (cat && p.categoria !== cat) return false
+      if (catId && p.categoriaId !== catId) return false
       if (!q) return true
       const haystack = [
         p.nombre,
@@ -112,7 +137,7 @@ export function useCatalog() {
   }
 
   const selectCategoria = (slug) => {
-    const cat = categorias.find((c) => c.slug === slug)
+    const cat = enrichedCategorias.find((c) => c.slug === slug)
     if (!cat) return
     if (activeBrand !== 'all' && cat.marca !== activeBrand) setActiveBrand(cat.marca)
     setActiveCategoria(slug === activeCategoria ? null : slug)
@@ -140,9 +165,9 @@ export function useCatalog() {
     setSearch,
     status,
     products,
-    marcas,
+    marcas: sortedMarcas,
     counts,
-    categorias,
+    categorias: enrichedCategorias,
     visibleCategorias,
     categoriaMeta,
     filtered,

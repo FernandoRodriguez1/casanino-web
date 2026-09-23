@@ -1,41 +1,47 @@
 import { normalizeBrand } from '../utils/brand'
 
-const PRODUCTOS_URL = '/data/productos.json'
-const CATEGORIAS_URL = '/data/categorias.json'
+const BASE = import.meta.env.VITE_API_URL || 'https://casanino-web.onrender.com'
 
-async function getJson(url) {
-  const res = await fetch(url)
+async function getJson(path) {
+  const res = await fetch(`${BASE}${path}`)
   if (!res.ok) throw new Error(`HTTP ${res.status}`)
   return res.json()
 }
 
-function toPublicPath(path) {
-  const p = String(path).replace(/\\/g, '/')
-  if (/^https?:\/\//.test(p)) return p
-  return '/' + p
-}
-
-export function normalizeProducto(raw, index) {
+export function normalizeProducto(raw) {
   return {
-    id: raw.id ?? index + 1,
+    id: raw.id,
     codigo: raw.codigo ?? '',
     modelo: raw.modelo ?? '',
     nombre: raw.nombre ?? '',
-    descripcion: raw.descripcion ?? '',
-    categoria: raw.categoria ?? '',
+    descripcion: raw.descripcion ?? null,
+    categoria: raw.categoriaNombre ?? '',
+    categoriaId: raw.categoriaId,
     accesorios: raw.accesorios ?? null,
     especificaciones: raw.especificaciones ?? null,
-    marca: raw.marca ?? '',
-    marcaNombre: normalizeBrand(raw.marca),
-    imagenes: (raw.imagenes ?? []).map(toPublicPath),
+    marca: raw.marcaNombre ?? '',
+    marcaId: raw.marcaId,
+    marcaNombre: normalizeBrand(raw.marcaNombre),
+    imagenes: Array.isArray(raw.imagenes) ? raw.imagenes.filter(Boolean) : [],
   }
 }
 
 export async function fetchProductos() {
-  const raw = await getJson(PRODUCTOS_URL)
+  const raw = await getJson('/api/Productos')
   return raw.map(normalizeProducto)
 }
 
 export async function fetchCategorias() {
-  return getJson(CATEGORIAS_URL)
+  const raw = await getJson('/api/Categorias')
+  return raw.map((c) => ({
+    id: c.id,
+    slug: String(c.id),
+    nombre: c.nombre,
+    imagen: c.imagen ?? null,
+  }))
+}
+
+export async function fetchMarcas() {
+  const raw = await getJson('/api/Marcas')
+  return raw.map((m) => ({ id: m.id, nombre: m.nombre }))
 }

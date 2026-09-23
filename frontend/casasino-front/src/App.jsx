@@ -1,14 +1,21 @@
+import { useState } from 'react'
 import Navbar from './components/Navbar'
 import ProductDetail from './components/ProductDetail'
 import CategoriesSection from './components/CategoriesSection'
 import StatusBox from './components/StatusBox'
 import Hero from './components/Hero'
 import CatalogSection from './components/CatalogSection'
+import AdminLogin from './components/AdminLogin'
+import AdminPanel from './components/AdminPanel'
 import { getBrandColor, readableBrandColor } from './utils/brand'
 import { useCatalog } from './hooks/useCatalog'
+import { useAuth } from './hooks/useAuth'
 import './App.css'
 
 function App() {
+  const { token, isAuthed, login, logout } = useAuth()
+  const [view, setView] = useState('catalog')
+
   const {
     activeBrand,
     activeCategoria,
@@ -31,6 +38,30 @@ function App() {
     closeDetail,
     clearCategoria,
   } = useCatalog()
+
+  if (view === 'login') {
+    return (
+      <AdminLogin
+        onLogin={async (nombre, password) => {
+          await login(nombre, password)
+          setView('admin')
+        }}
+        onBack={() => setView('catalog')}
+      />
+    )
+  }
+
+  if (view === 'admin') {
+    return (
+      <AdminPanel
+        token={token}
+        onLogout={() => {
+          logout()
+          setView('catalog')
+        }}
+      />
+    )
+  }
 
   const headingColor =
     activeBrand !== 'all' ? readableBrandColor(activeBrand) : '#0f172a'
@@ -55,6 +86,8 @@ return (
       onSearch={setSearch}
       counts={counts}
       loading={status !== 'ready'}
+      adminLabel={isAuthed ? 'Panel' : 'Admin'}
+      onAdmin={() => setView(isAuthed ? 'admin' : 'login')}
     />
 
     {status === 'ready' && (

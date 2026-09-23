@@ -1,6 +1,6 @@
 import { brandMeta, isLightColor } from '../utils/brand'
 
-function Navbar({ marcas, activeBrand, onSelectBrand, search, onSearch, counts, loading }) {
+function Navbar({ marcas, activeBrand, onSelectBrand, search, onSearch, counts, loading, adminLabel, onAdmin }) {
   const tabs = [
     { key: 'all', label: 'Todos' },
     ...marcas.map((m) => ({ key: m.nombre, label: m.nombre })),
@@ -57,6 +57,10 @@ function Navbar({ marcas, activeBrand, onSelectBrand, search, onSearch, counts, 
             </button>
           )}
         </div>
+
+        <button type="button" className="brand-tab admin-link" onClick={onAdmin}>
+          <span>{adminLabel}</span>
+        </button>
       </div>
     </header>
   )
