@@ -85,19 +85,32 @@ export function useCatalog() {
     return () => window.removeEventListener('casanino:catalog-changed', sync)
   }, [])
 
-  const products = useMemo(() => {
-    if (fullCatalog || activeBrand !== 'all') return allProducts
-    const seen = {}
-    return allProducts.filter((p) => {
-      seen[p.marcaNombre] = (seen[p.marcaNombre] ?? 0) + 1
-      return seen[p.marcaNombre] <= LIMITED_PER_BRAND
-    })
-  }, [allProducts, fullCatalog, activeBrand])
-
   const sortedMarcas = useMemo(
     () => [...marcas].sort((a, b) => a.nombre.localeCompare(b.nombre)),
     [marcas]
   )
+
+  const products = useMemo(() => {
+    if (fullCatalog || activeBrand !== 'all') return allProducts
+    const blocks = []
+    const inBlocks = new Set()
+    for (const m of sortedMarcas) {
+      const group = allProducts
+        .filter((p) => p.marcaNombre === m.nombre)
+        .slice(0, LIMITED_PER_BRAND)
+      if (group.length) {
+        blocks.push(...group)
+        for (const p of group) inBlocks.add(p.id)
+      }
+    }
+    const seen = {}
+    for (const p of allProducts) {
+      if (inBlocks.has(p.id)) continue
+      seen[p.marcaNombre] = (seen[p.marcaNombre] ?? 0) + 1
+      if (seen[p.marcaNombre] <= LIMITED_PER_BRAND) blocks.push(p)
+    }
+    return blocks
+  }, [allProducts, fullCatalog, activeBrand, sortedMarcas])
 
   const counts = useMemo(() => {
     const acc = { all: allProducts.length }
