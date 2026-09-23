@@ -9,6 +9,10 @@ export async function getProductos(token) {
   return Array.isArray(list) ? list : []
 }
 
+export function getProducto(token, id) {
+  return apiFetch(`/api/Productos/${id}`, { token })
+}
+
 export function createProducto(token, formData) {
   return apiFetch('/api/Productos', { method: 'POST', token, body: formData })
 }

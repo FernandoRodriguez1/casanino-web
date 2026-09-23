@@ -113,6 +113,13 @@ function Navbar({ marcas, activeBrand, onSelectBrand, search, onSearch, counts, 
               placeholder="Buscar productos..."
               value={search}
               onChange={(e) => onSearch(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault()
+                  close()
+                }
+              }}
+              onBlur={() => setTimeout(close, 120)}
               aria-label="Buscar productos"
               disabled={loading}
             />

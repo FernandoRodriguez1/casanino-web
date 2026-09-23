@@ -44,6 +44,7 @@ function App() {
     activeCategoria,
     search,
     setSearch,
+    setSearchProduct,
     status,
     marcas,
     counts,
@@ -147,7 +148,7 @@ function App() {
         onSelectBrand={setBrand}
         onSelectCat={selectCategoria}
         search={search}
-        onSearch={setSearch}
+        onSearch={setSearchProduct}
         counts={counts}
         loading={status !== 'ready'}
         showAdmin={isAuthed}

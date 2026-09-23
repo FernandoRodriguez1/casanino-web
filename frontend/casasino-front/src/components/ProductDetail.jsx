@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { getBrandColor, initials, isLightColor } from '../utils/brand'
 import { productWhatsappMessage, whatsappUrl } from '../utils/contact'
 
@@ -17,13 +17,6 @@ function DetailInfo({ producto, onBack, onEdit }) {
   const imgs = producto.imagenes?.filter(Boolean) ?? []
   const [current, setCurrent] = useState(0)
   const specs = formatSpecs(producto.especificaciones)
-
-  useEffect(() => {
-    document.body.style.overflow = 'hidden'
-    return () => {
-      document.body.style.overflow = ''
-    }
-  }, [])
 
   return (
     <div className="detail" style={{ ['--accent-detail']: color }}>
