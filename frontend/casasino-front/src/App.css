@@ -420,6 +420,7 @@ main {
 
 .catalog {
   margin-top: 28px;
+  scroll-margin-top: 96px;
 }
 
 /* ---------- Sección categorías (estilo swipper Dowen) ---------- */
@@ -913,6 +914,7 @@ main {
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 18px;
   margin-top: 24px;
+  scroll-margin-top: 96px;
 }
 
 .band {
@@ -1013,10 +1015,32 @@ main {
   overflow: hidden;
 }
 
-.card-link {
+.card-foot {
   margin-top: auto;
-  font-size: 13px;
-  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.card-code {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: 0.03em;
+  max-width: 55%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.card-link {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+  font-weight: 600;
   color: var(--accent);
 }
 
@@ -1215,6 +1239,37 @@ main {
 
 .detail-back {
   margin-bottom: 20px;
+}
+
+.detail-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.detail-top .detail-back {
+  margin-bottom: 0;
+}
+
+.detail-edit {
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  background: #fc4c02;
+  border: 1px solid #fc4c02;
+  border-radius: 999px;
+  padding: 9px 18px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+}
+
+.detail-edit:hover {
+  background: #e04300;
+  border-color: #e04300;
 }
 
 .detail-back button {
@@ -1787,24 +1842,109 @@ main {
   margin-top: 4px;
 }
 
-.ac-img-preview {
+.ac-img-grid {
   display: flex;
   align-items: center;
   gap: 12px;
   flex-wrap: wrap;
 }
 
-.ac-img-preview img {
-  width: 80px;
-  height: 80px;
-  object-fit: contain;
-  background: var(--bg);
+.ac-photo {
+  position: relative;
   border: 1px solid var(--border);
   border-radius: 10px;
+  background: var(--bg);
+  overflow: hidden;
+}
+
+.ac-photo img {
+  display: block;
+  width: 96px;
+  height: 96px;
+  object-fit: contain;
+}
+
+.ac-photo button {
+  position: absolute;
+  inset-inline: 6px;
+  bottom: 6px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+.ac-photo.ac-photo-remove {
+  border-color: #dc2626;
+  box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.3);
+}
+
+.ac-photo.ac-photo-remove img {
+  opacity: 0.45;
+}
+
+.ac-photo.ac-photo-remove button {
+  background: #dc2626;
+  border-color: #dc2626;
+}
+
+.ac-photo.ac-photo-new button {
+  inset-inline: auto;
+  top: 6px;
+  right: 6px;
+  bottom: auto;
+  left: auto;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border-radius: 50%;
+  font-size: 11px;
+}
+
+.ac-photo-checker {
+  background:
+    repeating-conic-gradient(#e5e7eb 0% 25%, #fff 0% 50%) 0 0 / 16px 16px;
+}
+
+.ac-photo-badge {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  background: rgba(16, 185, 129, 0.92);
+  color: #fff;
+  padding: 2px 7px;
+  border-radius: 999px;
+  pointer-events: none;
+}
+
+.ac-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--text);
+  cursor: pointer;
+  margin: 8px 0 4px;
+}
+
+.ac-check input {
+  margin-top: 2px;
+  accent-color: #10b981;
 }
 
 .admin-link {
-  margin-left: 10px;
+  margin-left: auto;
 }
 
 @media (max-width: 600px) {

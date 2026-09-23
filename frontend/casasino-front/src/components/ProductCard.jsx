@@ -18,7 +18,7 @@ function ProductCard({ producto, onOpen }) {
     <article className="card" onClick={() => onOpen(producto.id)}>
       <div className="thumb" style={{ background: `linear-gradient(135deg, ${color}, ${color}cc)`, color: thumbText }}>
         {img ? (
-          <img src={img} alt={producto.nombre} loading="lazy" />
+          <img src={img} alt={producto.nombre} loading="lazy" decoding="async" />
         ) : (
           <span className="thumb-fallback">{initials(producto.marcaNombre)}</span>
         )}
@@ -27,7 +27,12 @@ function ProductCard({ producto, onOpen }) {
       <div className="card-body">
         <h3>{producto.nombre}</h3>
         <p className="quality">{qualityLine(producto)}</p>
-        <span className="card-link">Ver detalle →</span>
+        <div className="card-foot">
+          <span className="card-code">
+            {producto.codigo ? `Código ${producto.codigo}` : 'Sin código'}
+          </span>
+          <span className="card-link">Ver detalle →</span>
+        </div>
       </div>
     </article>
   )

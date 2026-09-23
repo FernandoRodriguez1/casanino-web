@@ -10,7 +10,7 @@ function formatSpecs(text) {
     .filter(Boolean)
 }
 
-function DetailInfo({ producto, onBack }) {
+function DetailInfo({ producto, onBack, onEdit }) {
   const color = getBrandColor(producto.marcaNombre)
   const badgeText = isLightColor(color) ? '#000' : '#fff'
   const imgs = producto.imagenes?.filter(Boolean) ?? []
@@ -26,10 +26,17 @@ function DetailInfo({ producto, onBack }) {
 
   return (
     <div className="detail" style={{ ['--accent-detail']: color }}>
-      <div className="detail-back">
-        <button type="button" onClick={onBack}>
-          ← Volver al catálogo
-        </button>
+      <div className="detail-top">
+        <div className="detail-back">
+          <button type="button" onClick={onBack}>
+            ← Volver al catálogo
+          </button>
+        </div>
+        {onEdit && (
+          <button type="button" className="detail-edit" onClick={onEdit}>
+            Editar producto
+          </button>
+        )}
       </div>
 
       <div className="detail-layout">

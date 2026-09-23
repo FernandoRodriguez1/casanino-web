@@ -1,5 +1,12 @@
-import { useEffect, useMemo, useState } from 'react'
-import { fetchProductos, fetchCategorias, fetchMarcas } from '../services/catalog'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import {
+  loadCatalogData,
+  normalizeProducto,
+  fetchProductoById,
+  readCachedProductos,
+  cacheUpsertProduct,
+  cacheRemoveProduct,
+} from '../services/catalog'
 
 const scrollTop = () => window.scrollTo(0, 0)
 
@@ -13,48 +20,69 @@ export function useCatalog() {
   const [marcas, setMarcas] = useState([])
   const [status, setStatus] = useState('loading')
   const [selectedId, setSelectedId] = useState(null)
+  const [reloadTick, setReloadTick] = useState(0)
 
   const LIMITED_PER_BRAND = 16
 
+  const reload = useCallback(() => {
+    setStatus('loading')
+    setReloadTick((t) => t + 1)
+  }, [])
+
+  const applyProductUpdate = useCallback((saved, id) => {
+    const apply = (product) => {
+      setAllProducts((prev) => {
+        const idx = prev.findIndex((x) => x.id === product.id)
+        return idx >= 0 ? prev.map((x, i) => (i === idx ? product : x)) : [product, ...prev]
+      })
+      setTimeout(() => {
+        cacheUpsertProduct(product).catch(() => {})
+      }, 0)
+    }
+    if (saved && typeof saved.id !== 'undefined' && saved.id !== null) {
+      apply(normalizeProducto(saved))
+    } else if (id) {
+      fetchProductoById(id).then(apply).catch((err) => console.error('Error actualizando producto en caché:', err))
+    }
+  }, [])
+
+  const applyProductRemove = useCallback((id) => {
+    setAllProducts((prev) => prev.filter((x) => x.id !== id))
+    setTimeout(() => {
+      cacheRemoveProduct(id).catch(() => {})
+    }, 0)
+  }, [])
+
   useEffect(() => {
     let alive = true
-    fetchProductos()
-      .then((list) => {
+    const forceFresh = reloadTick > 0
+    loadCatalogData(!forceFresh)
+      .then(({ productos, categorias, marcas }) => {
         if (!alive) return
-        setAllProducts(list)
+        setAllProducts(productos)
+        setCategorias(categorias)
+        setMarcas(marcas)
         setStatus('ready')
       })
       .catch((err) => {
-        console.error('Error cargando productos:', err)
-        if (alive) setStatus('error')
+        console.error('Error cargando catálogo:', err)
+        if (alive) setStatus((s) => (s === 'ready' ? s : 'error'))
       })
     return () => {
       alive = false
     }
-  }, [])
+  }, [reloadTick])
 
   useEffect(() => {
-    let alive = true
-    fetchCategorias()
-      .then((cats) => {
-        if (alive) setCategorias(cats)
-      })
-      .catch((err) => console.error('Error cargando categorías:', err))
-    return () => {
-      alive = false
+    const sync = () => {
+      readCachedProductos()
+        .then((list) => {
+          if (Array.isArray(list) && list.length) setAllProducts(list)
+        })
+        .catch(() => {})
     }
-  }, [])
-
-  useEffect(() => {
-    let alive = true
-    fetchMarcas()
-      .then((m) => {
-        if (alive) setMarcas(m)
-      })
-      .catch((err) => console.error('Error cargando marcas:', err))
-    return () => {
-      alive = false
-    }
+    window.addEventListener('casanino:catalog-changed', sync)
+    return () => window.removeEventListener('casanino:catalog-changed', sync)
   }, [])
 
   const products = useMemo(() => {
@@ -104,7 +132,8 @@ export function useCatalog() {
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
     const catId = categoriaMeta?.id
-    return products.filter((p) => {
+    const base = q ? allProducts : products
+    return base.filter((p) => {
       if (activeBrand !== 'all' && p.marcaNombre !== activeBrand) return false
       if (catId && p.categoriaId !== catId) return false
       if (!q) return true
@@ -123,11 +152,11 @@ export function useCatalog() {
         .toLowerCase()
       return haystack.includes(q)
     })
-  }, [activeBrand, search, products, categoriaMeta])
+  }, [activeBrand, search, products, allProducts, categoriaMeta])
 
   const selected = useMemo(
-    () => products.find((p) => p.id === selectedId) ?? null,
-    [products, selectedId]
+    () => filtered.find((p) => p.id === selectedId) ?? null,
+    [filtered, selectedId]
   )
 
   const setBrand = (b) => {
@@ -156,7 +185,15 @@ export function useCatalog() {
 
   const clearCategoria = () => setActiveCategoria(null)
 
-  const loadFullCatalog = () => setFullCatalog(true)
+  const loadFullCatalog = () => {
+    setFullCatalog(true)
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const el = document.querySelector('.catalog .grid') || document.querySelector('.catalog')
+        el?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      })
+    })
+  }
 
   return {
     activeBrand,
@@ -176,6 +213,9 @@ export function useCatalog() {
     totalCount: allProducts.length,
     isFullCatalog: fullCatalog,
     loadFullCatalog,
+    reload,
+    applyProductUpdate,
+    applyProductRemove,
     setBrand,
     selectCategoria,
     openDetail,

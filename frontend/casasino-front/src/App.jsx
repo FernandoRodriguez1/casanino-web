@@ -1,20 +1,34 @@
-import { useState } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import Navbar from './components/Navbar'
 import ProductDetail from './components/ProductDetail'
 import CategoriesSection from './components/CategoriesSection'
 import StatusBox from './components/StatusBox'
 import Hero from './components/Hero'
 import CatalogSection from './components/CatalogSection'
-import AdminLogin from './components/AdminLogin'
-import AdminPanel from './components/AdminPanel'
 import { getBrandColor, readableBrandColor } from './utils/brand'
 import { useCatalog } from './hooks/useCatalog'
 import { useAuth } from './hooks/useAuth'
 import './App.css'
 
+const AdminLogin = lazy(() => import('./components/AdminLogin'))
+const AdminPanel = lazy(() => import('./components/AdminPanel'))
+const ProductEditModal = lazy(() => import('./components/ProductEditModal'))
+
 function App() {
   const { token, isAuthed, login, logout } = useAuth()
-  const [view, setView] = useState('catalog')
+  const [view, setViewState] = useState(() => {
+    const isLoginPath = window.location.pathname.replace(/\/+$/, '').endsWith('/login')
+    if (isLoginPath) return 'login'
+    const saved = localStorage.getItem('casanino_view')
+    return saved === 'admin' || saved === 'login' ? saved : 'catalog'
+  })
+  const changeView = (next) => {
+    try {
+      localStorage.setItem('casanino_view', next)
+    } catch {}
+    setViewState(next)
+  }
+  const [editTarget, setEditTarget] = useState(null)
 
   const {
     activeBrand,
@@ -25,6 +39,7 @@ function App() {
     marcas,
     counts,
     visibleCategorias,
+    categorias,
     categoriaMeta,
     filtered,
     selected,
@@ -32,6 +47,7 @@ function App() {
     totalCount,
     isFullCatalog,
     loadFullCatalog,
+    applyProductUpdate,
     setBrand,
     selectCategoria,
     openDetail,
@@ -39,27 +55,37 @@ function App() {
     clearCategoria,
   } = useCatalog()
 
-  if (view === 'login') {
+  const needLogin = view === 'login' || (view === 'admin' && !isAuthed)
+
+  if (needLogin) {
     return (
-      <AdminLogin
-        onLogin={async (nombre, password) => {
-          await login(nombre, password)
-          setView('admin')
-        }}
-        onBack={() => setView('catalog')}
-      />
+      <Suspense fallback={<StatusBox status="loading" />}>
+        <AdminLogin
+          onLogin={async (nombre, password) => {
+            await login(nombre, password)
+            history.replaceState(null, '', '/')
+            changeView('admin')
+          }}
+          onBack={() => {
+            history.replaceState(null, '', '/')
+            changeView('catalog')
+          }}
+        />
+      </Suspense>
     )
   }
 
   if (view === 'admin') {
     return (
-      <AdminPanel
-        token={token}
-        onLogout={() => {
-          logout()
-          setView('catalog')
-        }}
-      />
+      <Suspense fallback={<StatusBox status="loading" />}>
+        <AdminPanel
+          token={token}
+          onLogout={() => {
+            logout()
+            changeView('catalog')
+          }}
+        />
+      </Suspense>
     )
   }
 
@@ -73,7 +99,32 @@ const scrollToCatalog = () => {
 }
 
 if (selected) {
-  return <ProductDetail key={selected.id} producto={selected} onBack={closeDetail} />
+  return (
+    <>
+      <ProductDetail
+        key={selected.id}
+        producto={selected}
+        onBack={closeDetail}
+        onEdit={isAuthed ? () => setEditTarget(selected) : undefined}
+      />
+      {editTarget && isAuthed && (
+        <Suspense fallback={null}>
+          <ProductEditModal
+            key={editTarget.id}
+            token={token}
+            producto={editTarget}
+            marcas={marcas}
+            categorias={categorias}
+            onClose={() => setEditTarget(null)}
+            onSaved={(saved, id) => {
+              applyProductUpdate(saved, id)
+              setEditTarget(null)
+            }}
+          />
+        </Suspense>
+      )}
+    </>
+  )
 }
 
 return (
@@ -86,8 +137,8 @@ return (
       onSearch={setSearch}
       counts={counts}
       loading={status !== 'ready'}
-      adminLabel={isAuthed ? 'Panel' : 'Admin'}
-      onAdmin={() => setView(isAuthed ? 'admin' : 'login')}
+      showAdmin={isAuthed}
+      onAdmin={() => changeView('admin')}
     />
 
     {status === 'ready' && (
