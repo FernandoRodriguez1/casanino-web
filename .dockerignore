@@ -1,0 +1,12 @@
+.git/
+.gitignore
+.gitattributes
+.vs/
+**/bin/
+**/obj/
+**/out/
+**/publish/
+*.user
+*.suo
+frontend/
+README.md
