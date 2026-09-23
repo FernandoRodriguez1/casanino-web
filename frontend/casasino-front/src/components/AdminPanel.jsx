@@ -10,7 +10,7 @@ const TABS = [
   { key: 'admins', label: 'Administradores' },
 ]
 
-function AdminPanel({ token, onLogout }) {
+function AdminPanel({ token, onLogout, onBack }) {
   const [tab, setTab] = useState('productos')
 
   const categoriaApi = useMemo(
@@ -51,6 +51,9 @@ function AdminPanel({ token, onLogout }) {
             <strong>Casa Nino · Panel de administración</strong>
             <span className="ac-muted">Gestión de catálogo</span>
           </div>
+          <button type="button" className="ac-btn" onClick={onBack}>
+            ← Volver al catálogo
+          </button>
           <button type="button" className="ac-btn" onClick={onLogout}>
             Cerrar sesión
           </button>

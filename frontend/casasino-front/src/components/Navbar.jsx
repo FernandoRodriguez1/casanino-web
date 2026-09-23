@@ -47,17 +47,27 @@ function Navbar({ marcas, activeBrand, onSelectBrand, search, onSearch, counts, 
         </div>
 
         <nav className="brand-tabs" aria-label="Marcas">
-          {tabs.map((tab) => (
+          <button
+            type="button"
+            className={`brand-tab${activeBrand === 'all' ? ' active' : ''}`}
+            style={tabStyle('all', activeBrand === 'all')}
+            onClick={() => onSelectBrand('all')}
+            disabled={loading}
+          >
+            <span>Todos</span>
+            <span className="count">{loading ? '…' : (counts.all ?? 0)}</span>
+          </button>
+          {marcas.map((m) => (
             <button
-              key={tab.key}
+              key={m.nombre}
               type="button"
               className={`brand-tab${activeBrand === tab.key ? ' active' : ''}`}
               style={tabStyle(tab.key, activeBrand === tab.key)}
               onClick={() => pick(onSelectBrand, tab.key)}
               disabled={loading}
             >
-              <span>{tab.label}</span>
-              <span className="count">{loading ? '…' : (counts[tab.key] ?? 0)}</span>
+              <span>{m.nombre}</span>
+              <span className="count">{loading ? '…' : (counts[m.nombre] ?? 0)}</span>
             </button>
           ))}
         </nav>
