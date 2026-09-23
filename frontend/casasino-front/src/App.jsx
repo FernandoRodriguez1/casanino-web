@@ -5,6 +5,7 @@ import CategoriesSection from './components/CategoriesSection'
 import StatusBox from './components/StatusBox'
 import Hero from './components/Hero'
 import CatalogSection from './components/CatalogSection'
+import Footer from './components/Footer'
 import { getBrandColor, readableBrandColor } from './utils/brand'
 import { useCatalog } from './hooks/useCatalog'
 import { useAuth } from './hooks/useAuth'
@@ -22,13 +23,14 @@ function App() {
     const saved = localStorage.getItem('casanino_view')
     return saved === 'admin' || saved === 'login' ? saved : 'catalog'
   })
+  const [editTarget, setEditTarget] = useState(null)
+
   const changeView = (next) => {
     try {
       localStorage.setItem('casanino_view', next)
     } catch {}
     setViewState(next)
   }
-  const [editTarget, setEditTarget] = useState(null)
 
   const {
     activeBrand,
@@ -55,6 +57,13 @@ function App() {
     clearCategoria,
   } = useCatalog()
 
+  const headingColor = activeBrand !== 'all' ? readableBrandColor(activeBrand) : '#0f172a'
+  const heroAccent = activeBrand !== 'all' ? getBrandColor(activeBrand) : '#fc4c02'
+
+  const scrollToCatalog = () => {
+    document.querySelector('.catalog')?.scrollIntoView({ behavior: 'smooth' })
+  }
+
   const needLogin = view === 'login' || (view === 'admin' && !isAuthed)
 
   if (needLogin) {
@@ -63,11 +72,11 @@ function App() {
         <AdminLogin
           onLogin={async (nombre, password) => {
             await login(nombre, password)
-            history.replaceState(null, '', '/')
+            window.history.replaceState(null, '', '/')
             changeView('admin')
           }}
           onBack={() => {
-            history.replaceState(null, '', '/')
+            window.history.replaceState(null, '', '/')
             changeView('catalog')
           }}
         />
@@ -80,6 +89,7 @@ function App() {
       <Suspense fallback={<StatusBox status="loading" />}>
         <AdminPanel
           token={token}
+          onBack={() => changeView('catalog')}
           onLogout={() => {
             logout()
             changeView('catalog')
@@ -89,63 +99,59 @@ function App() {
     )
   }
 
-  const headingColor =
-    activeBrand !== 'all' ? readableBrandColor(activeBrand) : '#0f172a'
+  if (selected) {
+    return (
+      <>
+        <ProductDetail
+          key={selected.id}
+          producto={selected}
+          onBack={closeDetail}
+          onEdit={isAuthed ? () => setEditTarget(selected) : undefined}
+        />
+        {editTarget && isAuthed && (
+          <Suspense fallback={null}>
+            <ProductEditModal
+              key={editTarget.id}
+              token={token}
+              producto={editTarget}
+              marcas={marcas}
+              categorias={categorias}
+              onClose={() => setEditTarget(null)}
+              onSaved={(saved, id) => {
+                applyProductUpdate(saved, id)
+                setEditTarget(null)
+              }}
+            />
+          </Suspense>
+        )}
 
-const heroAccent = activeBrand !== 'all' ? getBrandColor(activeBrand) : '#fc4c02'
+        <Footer marcas={marcas} onSelectBrand={setBrand} />
+      </>
+    )
+  }
 
-const scrollToCatalog = () => {
-  document.querySelector('.catalog')?.scrollIntoView({ behavior: 'smooth' })
-}
-
-if (selected) {
   return (
     <>
-      <ProductDetail
-        key={selected.id}
-        producto={selected}
-        onBack={closeDetail}
-        onEdit={isAuthed ? () => setEditTarget(selected) : undefined}
+      <Navbar
+        marcas={marcas}
+        activeBrand={activeBrand}
+        activeCategoria={activeCategoria}
+        categorias={categorias}
+        onSelectBrand={setBrand}
+        onSelectCat={selectCategoria}
+        search={search}
+        onSearch={setSearch}
+        counts={counts}
+        loading={status !== 'ready'}
+        showAdmin={isAuthed}
+        onAdmin={() => changeView('admin')}
       />
-      {editTarget && isAuthed && (
-        <Suspense fallback={null}>
-          <ProductEditModal
-            key={editTarget.id}
-            token={token}
-            producto={editTarget}
-            marcas={marcas}
-            categorias={categorias}
-            onClose={() => setEditTarget(null)}
-            onSaved={(saved, id) => {
-              applyProductUpdate(saved, id)
-              setEditTarget(null)
-            }}
-          />
-        </Suspense>
+
+      {status === 'ready' && (
+        <Hero activeBrand={activeBrand} counts={counts} accent={heroAccent} onCta={scrollToCatalog} />
       )}
-    </>
-  )
-}
 
-return (
-  <>
-    <Navbar
-      marcas={marcas}
-      activeBrand={activeBrand}
-      onSelectBrand={setBrand}
-      search={search}
-      onSearch={setSearch}
-      counts={counts}
-      loading={status !== 'ready'}
-      showAdmin={isAuthed}
-      onAdmin={() => changeView('admin')}
-    />
-
-    {status === 'ready' && (
-      <Hero activeBrand={activeBrand} counts={counts} accent={heroAccent} onCta={scrollToCatalog} />
-    )}
-
-    <main>
+      <main>
         {status !== 'ready' ? (
           <StatusBox status={status} />
         ) : (
@@ -181,9 +187,7 @@ return (
         )}
       </main>
 
-      <footer className="footer">
-        <p>Casa Nino · Tortugas Santa Fe</p>
-      </footer>
+      <Footer marcas={marcas} onSelectBrand={setBrand} />
     </>
   )
 }
