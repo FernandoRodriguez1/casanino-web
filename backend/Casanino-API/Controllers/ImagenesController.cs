@@ -1,7 +1,9 @@
 using Amazon.S3;
+using Casanino_API.Data;
 using Casanino_API.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace Casanino_API.Controllers;
 
@@ -10,10 +12,12 @@ namespace Casanino_API.Controllers;
 [Route("api/[controller]")]
 public class ImagenesController : ControllerBase
 {
+    private readonly CasaninoDbContext _context;
     private readonly ImagenR2Service _imagenService;
 
-    public ImagenesController(ImagenR2Service imagenService)
+    public ImagenesController(CasaninoDbContext context, ImagenR2Service imagenService)
     {
+        _context = context;
         _imagenService = imagenService;
     }
 
@@ -25,7 +29,35 @@ public class ImagenesController : ControllerBase
             return BadRequest(new { message = "La url de la imagen es obligatoria" });
         }
 
-        var key = _imagenService.ExtractKey(url.Trim());
+        var cleanUrl = url.Trim();
+        var key = _imagenService.ExtractKey(cleanUrl);
+
+        var productos = await _context.Productos
+            .Where(p => p.Imagenes != null && p.Imagenes.Contains(cleanUrl))
+            .ToListAsync();
+
+        foreach (var producto in productos)
+        {
+            producto.Imagenes!.Remove(cleanUrl);
+            if (producto.Imagenes.Count == 0)
+            {
+                producto.Imagenes = null;
+            }
+        }
+
+        var categorias = await _context.Categorias
+            .Where(c => c.Imagen == cleanUrl)
+            .ToListAsync();
+
+        foreach (var categoria in categorias)
+        {
+            categoria.Imagen = null;
+        }
+
+        if (productos.Count > 0 || categorias.Count > 0)
+        {
+            await _context.SaveChangesAsync();
+        }
 
         try
         {

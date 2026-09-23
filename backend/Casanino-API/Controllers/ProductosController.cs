@@ -85,22 +85,29 @@ public class ProductosController : ControllerBase
             return validationError;
         }
 
-        string? imagenKey = null;
+        var uploadedKeys = new List<string>();
+        var urls = new List<string>();
 
-        if (dto.Imagen is not null && dto.Imagen.Length > 0)
+        if (dto.Imagenes is not null)
         {
-            if (dto.Imagen.Length > ImagenR2Service.MaxFileSize)
+            foreach (var file in dto.Imagenes)
             {
-                return BadRequest(new { message = "La imagen excede el tamaño máximo de 10 MB" });
-            }
+                if (file.Length > ImagenR2Service.MaxFileSize)
+                {
+                    await DeleteImagenesBestEffort(uploadedKeys);
+                    return BadRequest(new { message = $"La imagen {file.FileName} excede el tamaño máximo de 10 MB" });
+                }
 
-            var result = await UploadImagen(dto.Imagen, dto.Codigo, dto.Nombre);
-            if (result.Error is not null)
-            {
-                return result.Error;
-            }
+                var result = await UploadImagen(file, dto.Codigo, dto.Nombre);
+                if (result.Error is not null)
+                {
+                    await DeleteImagenesBestEffort(uploadedKeys);
+                    return result.Error;
+                }
 
-            imagenKey = result.Key;
+                uploadedKeys.Add(result.Key!);
+                urls.Add(_imagenService.BuildPublicUrl(result.Key!));
+            }
         }
 
         var producto = new Producto
@@ -109,7 +116,7 @@ public class ProductosController : ControllerBase
             Modelo = string.IsNullOrWhiteSpace(dto.Modelo) ? null : dto.Modelo.Trim(),
             Nombre = dto.Nombre.Trim(),
             Descripcion = dto.Descripcion,
-            Imagenes = imagenKey is null ? null : [_imagenService.BuildPublicUrl(imagenKey)],
+            Imagenes = urls.Count == 0 ? null : urls,
             CategoriaId = dto.CategoriaId,
             MarcaId = dto.MarcaId,
             Especificaciones = dto.Especificaciones,
@@ -123,6 +130,7 @@ public class ProductosController : ControllerBase
         }
         catch (DbUpdateException)
         {
+            await DeleteImagenesBestEffort(uploadedKeys);
             return Conflict(new { message = "Ya existe un producto con ese código" });
         }
 
@@ -147,23 +155,37 @@ public class ProductosController : ControllerBase
             return validationError;
         }
 
-        var previousImages = producto.Imagenes;
+        var previousImages = producto.Imagenes ?? [];
+        var eliminate = dto.ImagenesEliminar ?? [];
+        var eliminated = previousImages.Where(u => eliminate.Contains(u)).ToList();
+        var preserved = previousImages.Where(u => !eliminate.Contains(u)).ToList();
 
-        if (dto.Imagen is not null && dto.Imagen.Length > 0)
+        var uploadedKeys = new List<string>();
+        var urlsToAppend = new List<string>();
+
+        if (dto.Imagenes is not null)
         {
-            if (dto.Imagen.Length > ImagenR2Service.MaxFileSize)
+            foreach (var file in dto.Imagenes)
             {
-                return BadRequest(new { message = "La imagen excede el tamaño máximo de 10 MB" });
-            }
+                if (file.Length > ImagenR2Service.MaxFileSize)
+                {
+                    await DeleteImagenesBestEffort(uploadedKeys);
+                    return BadRequest(new { message = $"La imagen {file.FileName} excede el tamaño máximo de 10 MB" });
+                }
 
-            var result = await UploadImagen(dto.Imagen, dto.Codigo, dto.Nombre);
-            if (result.Error is not null)
-            {
-                return result.Error;
-            }
+                var result = await UploadImagen(file, dto.Codigo, dto.Nombre);
+                if (result.Error is not null)
+                {
+                    await DeleteImagenesBestEffort(uploadedKeys);
+                    return result.Error;
+                }
 
-            producto.Imagenes = [_imagenService.BuildPublicUrl(result.Key!)];
+                uploadedKeys.Add(result.Key!);
+                urlsToAppend.Add(_imagenService.BuildPublicUrl(result.Key!));
+            }
         }
+
+        var newImages = preserved.Concat(urlsToAppend).Distinct().ToList();
 
         producto.Codigo = dto.Codigo.Trim();
         producto.Modelo = string.IsNullOrWhiteSpace(dto.Modelo) ? null : dto.Modelo.Trim();
@@ -173,6 +195,7 @@ public class ProductosController : ControllerBase
         producto.MarcaId = dto.MarcaId;
         producto.Especificaciones = dto.Especificaciones;
         producto.Accesorios = dto.Accesorios;
+        producto.Imagenes = newImages.Count == 0 ? null : newImages;
 
         try
         {
@@ -180,14 +203,15 @@ public class ProductosController : ControllerBase
         }
         catch (DbUpdateException)
         {
+            await DeleteImagenesBestEffort(uploadedKeys);
             return Conflict(new { message = "Ya existe un producto con ese código" });
         }
 
-        if (previousImages is not null && producto.Imagenes is not null && !producto.Imagenes.SequenceEqual(previousImages))
+        foreach (var removedUrl in eliminated)
         {
-            foreach (var url in previousImages)
+            if (!await IsUrlReferencedAsync(removedUrl))
             {
-                await DeleteImagenBestEffort(_imagenService.ExtractKey(url));
+                await DeleteImagenBestEffort(_imagenService.ExtractKey(removedUrl));
             }
         }
 
@@ -236,6 +260,14 @@ public class ProductosController : ControllerBase
         }
     }
 
+    private async Task DeleteImagenesBestEffort(IEnumerable<string> keys)
+    {
+        foreach (var key in keys)
+        {
+            await DeleteImagenBestEffort(key);
+        }
+    }
+
     private async Task DeleteImagenBestEffort(string key)
     {
         try
@@ -245,6 +277,21 @@ public class ProductosController : ControllerBase
         catch (Exception)
         {
         }
+    }
+
+    private async Task<bool> IsUrlReferencedAsync(string url)
+    {
+        if (await _context.Productos.AnyAsync(p => p.Imagenes != null && p.Imagenes.Contains(url)))
+        {
+            return true;
+        }
+
+        if (await _context.Categorias.AnyAsync(c => c.Imagen == url))
+        {
+            return true;
+        }
+
+        return false;
     }
 
     private async Task<ActionResult?> ValidateProducto(string codigo, string nombre, int categoriaId, int marcaId)
