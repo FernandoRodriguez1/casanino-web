@@ -1,43 +1,19 @@
-import { lazy, Suspense, useState } from 'react'
-import Navbar from './components/Navbar'
-import Footer from './components/Footer'
-import ProductDetail from './components/ProductDetail'
-import CategoriesSection from './components/CategoriesSection'
+import { lazy, Suspense, useEffect, useState } from 'react'
+import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
+import HomeView from './components/HomeView'
 import StatusBox from './components/StatusBox'
-import Hero from './components/Hero'
-import CatalogSection from './components/CatalogSection'
-import { getBrandColor, readableBrandColor } from './utils/brand'
 import { useCatalog } from './hooks/useCatalog'
 import { useAuth } from './hooks/useAuth'
 import './App.css'
 
 const AdminLogin = lazy(() => import('./components/AdminLogin'))
 const AdminPanel = lazy(() => import('./components/AdminPanel'))
-const ProductEditModal = lazy(() => import('./components/ProductEditModal'))
 
 function App() {
   const { token, isAuthed, login, logout } = useAuth()
-  const [view, setViewState] = useState(() => {
-    const clean = window.location.pathname.replace(/\/+$/, '') || '/'
-    if (clean === '/login') return 'login'
-    if (clean === '/') {
-      const saved = localStorage.getItem('casanino_view')
-      if (saved === 'admin' || saved === 'login') return saved
-    }
-    return 'catalog'
-  })
+  const navigate = useNavigate()
+  const location = useLocation()
   const [editTarget, setEditTarget] = useState(null)
-
-  const changeView = (next) => {
-    try {
-      localStorage.setItem('casanino_view', next)
-    } catch {}
-    const clean = window.location.pathname.replace(/\/+$/, '') || '/'
-    if (next !== 'login' && clean !== '/') {
-      window.history.replaceState(null, '', '/')
-    }
-    setViewState(next)
-  }
 
   const {
     activeBrand,
@@ -65,138 +41,95 @@ function App() {
     clearCategoria,
   } = useCatalog()
 
-  const headingColor = activeBrand !== 'all' ? readableBrandColor(activeBrand) : '#0f172a'
-  const heroAccent = activeBrand !== 'all' ? getBrandColor(activeBrand) : '#fc4c02'
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [location.pathname])
 
-  const scrollToCatalog = () => {
-    document.querySelector('.catalog')?.scrollIntoView({ behavior: 'smooth' })
-  }
-
-  const needLogin = view === 'login' || (view === 'admin' && !isAuthed)
-
-  if (needLogin) {
-    return (
-      <Suspense fallback={<StatusBox status="loading" />}>
-        <AdminLogin
-          onLogin={async (nombre, password) => {
-            await login(nombre, password)
-            window.history.replaceState(null, '', '/')
-            changeView('admin')
-          }}
-          onBack={() => {
-            window.history.replaceState(null, '', '/')
-            changeView('catalog')
-          }}
-        />
-      </Suspense>
-    )
-  }
-
-  if (view === 'admin') {
-    return (
-      <Suspense fallback={<StatusBox status="loading" />}>
-        <AdminPanel
-          token={token}
-          onBack={() => changeView('catalog')}
-          onLogout={() => {
-            logout()
-            changeView('catalog')
-          }}
-        />
-      </Suspense>
-    )
-  }
-
-  if (selected) {
-    return (
-      <>
-        <ProductDetail
-          key={selected.id}
-          producto={selected}
-          onBack={closeDetail}
-          onEdit={isAuthed ? () => setEditTarget(selected) : undefined}
-        />
-        {editTarget && isAuthed && (
-          <Suspense fallback={null}>
-            <ProductEditModal
-              key={editTarget.id}
-              token={token}
-              producto={editTarget}
-              marcas={marcas}
-              categorias={categorias}
-              onClose={() => setEditTarget(null)}
-              onSaved={(saved, id) => {
-                applyProductUpdate(saved, id)
-                setEditTarget(null)
-              }}
-            />
-          </Suspense>
-        )}
-
-        <Footer marcas={marcas} onSelectBrand={setBrand} />
-      </>
-    )
+  const focusFirstResult = () => {
+    const card = document.querySelector('.catalog .grid .card')
+    if (!card) return
+    card.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    card.focus({ preventScroll: true })
   }
 
   return (
-    <>
-      <Navbar
-        marcas={marcas}
-        activeBrand={activeBrand}
-        activeCategoria={activeCategoria}
-        categorias={categorias}
-        onSelectBrand={setBrand}
-        onSelectCat={selectCategoria}
-        search={search}
-        onSearch={setSearchProduct}
-        counts={counts}
-        loading={status !== 'ready'}
-        showAdmin={isAuthed}
-        onAdmin={() => changeView('admin')}
+    <Routes>
+      <Route
+        path="/login"
+        element={
+          isAuthed ? (
+            <Navigate to="/admin" replace />
+          ) : (
+            <Suspense fallback={<StatusBox status="loading" />}>
+              <AdminLogin
+                onLogin={async (nombre, password) => {
+                  await login(nombre, password)
+                  navigate('/admin')
+                }}
+                onBack={() => navigate('/')}
+              />
+            </Suspense>
+          )
+        }
       />
 
-      {status === 'ready' && (
-        <Hero activeBrand={activeBrand} counts={counts} accent={heroAccent} onCta={scrollToCatalog} />
-      )}
+      <Route
+        path="/admin"
+        element={
+          isAuthed ? (
+            <Suspense fallback={<StatusBox status="loading" />}>
+              <AdminPanel
+                token={token}
+                onBack={() => navigate('/')}
+                onLogout={() => {
+                  logout()
+                  navigate('/')
+                }}
+              />
+            </Suspense>
+          ) : (
+            <Navigate to="/login" replace />
+          )
+        }
+      />
 
-      <main>
-        {status !== 'ready' ? (
-          <StatusBox status={status} />
-        ) : (
-          <>
-            <CategoriesSection
-              mode={activeBrand === 'all' ? 'all' : 'brand'}
-              categorias={visibleCategorias}
-              marcas={marcas}
-              counts={counts}
-              active={activeCategoria}
-              accent={heroAccent}
-              onSelectCat={selectCategoria}
-              onSelectBrand={setBrand}
-              onClearCat={clearCategoria}
-            />
-
-            <CatalogSection
-              categoriaMeta={categoriaMeta}
-              activeBrand={activeBrand}
-              marcas={marcas}
-              filtered={filtered}
-              search={search}
-              headingColor={headingColor}
-              loadedCount={loadedCount}
-              totalCount={totalCount}
-              isFullCatalog={isFullCatalog}
-              onLoadFull={loadFullCatalog}
-              onClearCategoria={clearCategoria}
-              onOpen={openDetail}
-              onClearSearch={() => setSearch('')}
-            />
-          </>
-        )}
-      </main>
-
-      <Footer marcas={marcas} onSelectBrand={setBrand} />
-    </>
+      <Route
+        path="*"
+        element={
+          <HomeView
+            activeBrand={activeBrand}
+            activeCategoria={activeCategoria}
+            search={search}
+            setSearch={setSearch}
+            setSearchProduct={setSearchProduct}
+            status={status}
+            marcas={marcas}
+            counts={counts}
+            visibleCategorias={visibleCategorias}
+            categorias={categorias}
+            categoriaMeta={categoriaMeta}
+            filtered={filtered}
+            selected={selected}
+            loadedCount={loadedCount}
+            totalCount={totalCount}
+            isFullCatalog={isFullCatalog}
+            loadFullCatalog={loadFullCatalog}
+            applyProductUpdate={applyProductUpdate}
+            setBrand={setBrand}
+            selectCategoria={selectCategoria}
+            openDetail={openDetail}
+            closeDetail={closeDetail}
+            clearCategoria={clearCategoria}
+            isAuthed={isAuthed}
+            token={token}
+            editTarget={editTarget}
+            setEditTarget={setEditTarget}
+            onAdmin={() => navigate('/admin')}
+            onSearchSubmit={focusFirstResult}
+          />
+        }
+      />
+    </Routes>
   )
 }
 

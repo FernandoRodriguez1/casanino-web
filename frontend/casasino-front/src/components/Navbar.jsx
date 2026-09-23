@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { brandMeta, isLightColor } from '../utils/brand'
 
-function Navbar({ marcas, activeBrand, onSelectBrand, search, onSearch, counts, loading, showAdmin, onAdmin }) {
+function Navbar({ marcas, activeBrand, onSelectBrand, search, onSearch, counts, loading, showAdmin, onAdmin, onSearchSubmit }) {
   const [open, setOpen] = useState(false)
   const innerRef = useRef(null)
 
@@ -78,6 +78,12 @@ function Navbar({ marcas, activeBrand, onSelectBrand, search, onSearch, counts, 
             placeholder="Buscar productos..."
             value={search}
             onChange={(e) => onSearch(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault()
+                onSearchSubmit?.()
+              }
+            }}
             aria-label="Buscar productos"
             disabled={loading}
           />
@@ -116,6 +122,7 @@ function Navbar({ marcas, activeBrand, onSelectBrand, search, onSearch, counts, 
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
                   e.preventDefault()
+                  onSearchSubmit?.()
                   close()
                 }
               }}
