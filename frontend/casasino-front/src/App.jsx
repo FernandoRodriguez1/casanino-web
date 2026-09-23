@@ -17,18 +17,26 @@ const ProductEditModal = lazy(() => import('./components/ProductEditModal'))
 function App() {
   const { token, isAuthed, login, logout } = useAuth()
   const [view, setViewState] = useState(() => {
-    const isLoginPath = window.location.pathname.replace(/\/+$/, '').endsWith('/login')
-    if (isLoginPath) return 'login'
-    const saved = localStorage.getItem('casanino_view')
-    return saved === 'admin' || saved === 'login' ? saved : 'catalog'
+    const clean = window.location.pathname.replace(/\/+$/, '') || '/'
+    if (clean === '/login') return 'login'
+    if (clean === '/') {
+      const saved = localStorage.getItem('casanino_view')
+      if (saved === 'admin' || saved === 'login') return saved
+    }
+    return 'catalog'
   })
+  const [editTarget, setEditTarget] = useState(null)
+
   const changeView = (next) => {
     try {
       localStorage.setItem('casanino_view', next)
     } catch {}
-    setViewState(next)
+    const clean = window.location.pathname.replace(/\/+$/, '') || '/'
+    if (next !== 'login' && clean !== '/') {
+      window.history.replaceState(null, '', '/')
+    }
+setViewState(next)
   }
-  const [editTarget, setEditTarget] = useState(null)
 
   const {
     activeBrand,
