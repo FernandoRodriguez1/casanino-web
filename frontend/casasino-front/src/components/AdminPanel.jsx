@@ -47,16 +47,20 @@ function AdminPanel({ token, onLogout, onBack }) {
     <div className="admin-panel">
       <header className="admin-head">
         <div className="admin-head-inner">
-          <div>
+          <div className="admin-head-side left">
+            <button type="button" className="ac-btn" onClick={onBack}>
+              ← Volver al catálogo
+            </button>
+          </div>
+          <div className="admin-head-title">
             <strong>Casa Nino · Panel de administración</strong>
             <span className="ac-muted">Gestión de catálogo</span>
           </div>
-          <button type="button" className="ac-btn" onClick={onBack}>
-            ← Volver al catálogo
-          </button>
-          <button type="button" className="ac-btn" onClick={onLogout}>
-            Cerrar sesión
-          </button>
+          <div className="admin-head-side right">
+            <button type="button" className="ac-btn" onClick={onLogout}>
+              Cerrar sesión
+            </button>
+          </div>
         </div>
       </header>
 

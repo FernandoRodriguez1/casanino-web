@@ -166,12 +166,14 @@ function AdminProducts({ token }) {
                   <td>{p.marcaNombre}</td>
                   <td>{p.categoriaNombre}</td>
                   <td className="ac-col-actions">
-                    <button type="button" className="ac-btn" onClick={() => openEdit(p)}>
-                      Editar
-                    </button>
-                    <button type="button" className="ac-btn ac-btn-danger" onClick={() => remove(p)}>
-                      Eliminar
-                    </button>
+                    <div className="ac-cell-actions">
+                      <button type="button" className="ac-btn" onClick={() => openEdit(p)}>
+                        Editar
+                      </button>
+                      <button type="button" className="ac-btn ac-btn-danger" onClick={() => remove(p)}>
+                        Eliminar
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}

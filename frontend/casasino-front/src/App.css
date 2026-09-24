@@ -1836,11 +1836,28 @@ main {
 }
 
 .admin-head-inner {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  justify-content: space-between;
   gap: 12px;
+  text-align: center;
   padding: 8px 0 18px;
+}
+
+.admin-head-side.left {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.admin-head-side.right {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.admin-head-title {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .admin-head-inner strong {
@@ -2001,10 +2018,19 @@ main {
 
 .ac-col-actions {
   text-align: right;
+  white-space: nowrap;
 }
 
-.ac-col-actions .ac-btn {
-  margin-left: 8px;
+.ac-cell-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.ac-cell-actions .ac-btn,
+.ac-row-actions .ac-btn {
+  flex: 1 1 0;
+  min-width: 84px;
 }
 
 .ac-modal {
@@ -2676,15 +2702,28 @@ main {
 
 @media (max-width: 600px) {
   .admin-head-inner {
-    flex-wrap: wrap;
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      'title title'
+      'left right';
   }
 
-  .admin-head-inner > div {
-    flex: 1 1 100%;
+  .admin-head-title {
+    grid-area: title;
   }
 
-  .admin-head-inner .ac-btn {
-    flex: 1 1 calc(50% - 6px);
+  .admin-head-side.left {
+    grid-area: left;
+    justify-content: stretch;
+  }
+
+  .admin-head-side.right {
+    grid-area: right;
+    justify-content: stretch;
+  }
+
+  .admin-head-side .ac-btn {
+    flex: 1 1 auto;
   }
 
   .ac-table th:nth-child(4),
