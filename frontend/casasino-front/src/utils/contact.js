@@ -2,6 +2,8 @@ export const WHATSAPP_NUMBER = '5493471505442'
 
 export const INSTAGRAM_URL = 'https://www.instagram.com/casaninotortugas/'
 
+export const MAPS_URL = 'https://maps.app.goo.gl/QFrn3GYUFp7rLis57'
+
 export function whatsappUrl(message) {
   return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`
 }

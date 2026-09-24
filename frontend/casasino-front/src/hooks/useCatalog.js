@@ -156,8 +156,15 @@ export function useCatalog() {
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
+    const catId = categoriaMeta?.id
+    const matches = (p) => {
+      if (activeBrand !== 'all' && p.marcaNombre !== activeBrand) return false
+      if (catId && p.categoriaId !== catId) return false
+      return true
+    }
     if (q) {
       return allProducts.filter((p) => {
+        if (!matches(p)) return false
         const haystack = [p.nombre, p.codigo, p.modelo, p.marcaNombre]
           .filter(Boolean)
           .join(' ')
@@ -165,12 +172,7 @@ export function useCatalog() {
         return haystack.includes(q)
       })
     }
-    const catId = categoriaMeta?.id
-    return products.filter((p) => {
-      if (activeBrand !== 'all' && p.marcaNombre !== activeBrand) return false
-      if (catId && p.categoriaId !== catId) return false
-      return true
-    })
+    return products.filter(matches)
   }, [activeBrand, search, products, allProducts, categoriaMeta])
 
   const selected = useMemo(
@@ -186,10 +188,18 @@ export function useCatalog() {
 
   const setSearchProduct = (value) => {
     if (value.trim() && !search.trim()) {
-      setActiveBrand('all')
       setActiveCategoria(null)
     }
     setSearch(value)
+  }
+
+  const scrollToCatalog = () => {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const el = document.querySelector('.catalog .grid') || document.querySelector('.catalog')
+        el?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      })
+    })
   }
 
   const selectCategoria = (slug) => {
@@ -197,7 +207,7 @@ export function useCatalog() {
     if (!cat) return
     if (activeBrand !== 'all' && cat.marca !== activeBrand) setActiveBrand(cat.marca)
     setActiveCategoria(slug === activeCategoria ? null : slug)
-    scrollTop()
+    scrollToCatalog()
   }
 
   const openDetail = (id) => {
