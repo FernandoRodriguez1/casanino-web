@@ -13,7 +13,7 @@ const empty = {
   marcaId: '',
 }
 
-function ProductEditModal({ token, producto, marcas, categorias, onClose, onSaved }) {
+function ProductEditModal({ token, producto, marcas, categorias, onClose, onSaved, onDeleted }) {
   const isNew = !producto || typeof producto.id !== 'number'
   const [values, setValues] = useState(empty)
   const [items, setItems] = useState([]) // [{ kind: 'url', url } | { kind: 'file', file, blob, url, processed }]
@@ -23,6 +23,8 @@ function ProductEditModal({ token, producto, marcas, categorias, onClose, onSave
   const [error, setError] = useState('')
   const [removeBg, setRemoveBg] = useState(true)
   const [processing, setProcessing] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  const [deleting, setDeleting] = useState(false)
 
   const itemsRef = useRef(items)
   useEffect(() => {
@@ -174,10 +176,38 @@ function ProductEditModal({ token, producto, marcas, categorias, onClose, onSave
     }
   }
 
+  const deleteProduct = async () => {
+    if (!producto || typeof producto.id !== 'number') return
+    setDeleting(true)
+    setError('')
+    try {
+      await adminApi.deleteProducto(token, producto.id)
+      onDeleted?.(producto)
+    } catch (err) {
+      setError(err?.message || 'No se pudo eliminar el producto')
+      setConfirmDelete(false)
+      setDeleting(false)
+    }
+  }
+
   return (
     <div className="ac-modal" role="dialog" aria-modal="true">
       <form className="ac-modal-card ac-modal-card-wide" onSubmit={submit}>
-        <h3>{isNew ? 'Nuevo producto' : `Editar producto #${producto.id}`}</h3>
+        <div className="ac-modal-head">
+          <h3>{isNew ? 'Nuevo producto' : `Editar producto #${producto.id}`}</h3>
+          {!isNew && !busy && (
+            <button
+              type="button"
+              className="ac-btn ac-btn-danger"
+              onClick={() => {
+                setError('')
+                setConfirmDelete(true)
+              }}
+            >
+              Eliminar
+            </button>
+          )}
+        </div>
 
         <div className="ac-field">
           <span>Nombre *</span>
@@ -328,6 +358,33 @@ function ProductEditModal({ token, producto, marcas, categorias, onClose, onSave
             {busy ? 'Guardando...' : 'Guardar'}
           </button>
         </div>
+
+        {!isNew && confirmDelete && (
+          <div className="ac-modal-confirm">
+            <h3>Eliminar producto</h3>
+            <p>
+              ¿Estás seguro de que querés eliminar el producto <strong>{producto.nombre}</strong>?
+              Esta acción no se puede deshacer.
+            </p>
+            {error && <p className="ac-error">{error}</p>}
+            <div className="ac-modal-actions">
+              <button
+                type="button"
+                className="ac-btn"
+                onClick={() => {
+                  setConfirmDelete(false)
+                  setError('')
+                }}
+                disabled={deleting}
+              >
+                Cancelar
+              </button>
+              <button type="button" className="ac-btn ac-btn-danger" onClick={deleteProduct} disabled={deleting}>
+                {deleting ? 'Eliminando...' : 'Sí, eliminar'}
+              </button>
+            </div>
+          </div>
+        )}
       </form>
     </div>
   )

@@ -34,6 +34,7 @@ function App() {
     isFullCatalog,
     loadFullCatalog,
     applyProductUpdate,
+    applyProductRemove,
     setBrand,
     selectCategoria,
     openDetail,
@@ -129,6 +130,7 @@ function App() {
             isFullCatalog={isFullCatalog}
             loadFullCatalog={loadFullCatalog}
             applyProductUpdate={applyProductUpdate}
+            applyProductRemove={applyProductRemove}
             setBrand={setBrand}
             selectCategoria={selectCategoria}
             openDetail={openDetail}

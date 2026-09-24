@@ -96,18 +96,22 @@ function AdminProducts({ token }) {
     if (id) await refresh()
   }
 
+  const cleanupAfterDelete = async (item) => {
+    setItems((prev) => prev.filter((x) => x.id !== item.id))
+    try {
+      await cacheRemoveProduct(item.id)
+      notifyCatalogChanged()
+    } catch (err) {
+      console.error('Error actualizando caché tras eliminar:', err)
+    }
+  }
+
   const remove = async (item) => {
     if (!window.confirm(`¿Eliminar el producto "${item.nombre}"?`)) return
     setError('')
     try {
       await adminApi.deleteProducto(token, item.id)
-      setItems((prev) => prev.filter((x) => x.id !== item.id))
-      try {
-        await cacheRemoveProduct(item.id)
-        notifyCatalogChanged()
-      } catch (err) {
-        console.error('Error actualizando caché tras eliminar:', err)
-      }
+      await cleanupAfterDelete(item)
     } catch (err) {
       setError(err?.message || 'No se pudo eliminar')
     }
@@ -189,6 +193,10 @@ function AdminProducts({ token }) {
           categorias={categorias}
           onClose={closeForm}
           onSaved={handleSaved}
+          onDeleted={(producto) => {
+            closeForm()
+            cleanupAfterDelete(producto)
+          }}
         />
       )}
     </section>
