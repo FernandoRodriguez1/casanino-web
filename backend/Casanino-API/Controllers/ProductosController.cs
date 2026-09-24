@@ -185,7 +185,14 @@ public class ProductosController : ControllerBase
             }
         }
 
-        var newImages = preserved.Concat(urlsToAppend).Distinct().ToList();
+        var newImagesResult = BuildOrderedImages(preserved, urlsToAppend, dto.ImagenesOrden);
+        if (newImagesResult.Error is not null)
+        {
+            await DeleteImagenesBestEffort(uploadedKeys);
+            return newImagesResult.Error;
+        }
+
+        var newImages = newImagesResult.Ordered;
 
         producto.Codigo = dto.Codigo.Trim();
         producto.Modelo = string.IsNullOrWhiteSpace(dto.Modelo) ? null : dto.Modelo.Trim();
@@ -292,6 +299,60 @@ public class ProductosController : ControllerBase
         }
 
         return false;
+    }
+
+    private (List<string> Ordered, ActionResult? Error) BuildOrderedImages(
+        List<string> preserved, List<string> urlsToAppend, List<string>? orden)
+    {
+        if (orden is null || orden.Count == 0)
+        {
+            return (preserved.Concat(urlsToAppend).Distinct().ToList(), null);
+        }
+
+        var result = new List<string>();
+        var emitted = new HashSet<string>();
+        var usedTokens = new HashSet<int>();
+
+        foreach (var raw in orden)
+        {
+            var entry = raw.Trim();
+            if (string.IsNullOrEmpty(entry))
+            {
+                continue;
+            }
+
+            if (entry.StartsWith("new:", StringComparison.OrdinalIgnoreCase))
+            {
+                if (!int.TryParse(entry.AsSpan(4), out var idx) || idx < 0 || idx >= urlsToAppend.Count)
+                {
+                    return (result, BadRequest(new { message = $"Token {entry} inválido en ImagenesOrden. Rango válido de nuevas imágenes: 0..{urlsToAppend.Count - 1}" }));
+                }
+
+                if (!usedTokens.Add(idx))
+                {
+                    return (result, BadRequest(new { message = $"El token {entry} aparece más de una vez en ImagenesOrden" }));
+                }
+
+                var url = urlsToAppend[idx];
+                if (emitted.Add(url))
+                {
+                    result.Add(url);
+                }
+            }
+            else if (!preserved.Contains(entry))
+            {
+                return (result, BadRequest(new { message = $"La URL {entry} en ImagenesOrden no pertenece a las imágenes conservadas del producto" }));
+            }
+            else if (emitted.Add(entry))
+            {
+                result.Add(entry);
+            }
+        }
+
+        result.AddRange(preserved.Where(u => !emitted.Contains(u)));
+        result.AddRange(urlsToAppend.Where(u => !emitted.Contains(u)));
+
+        return (result, null);
     }
 
     private async Task<ActionResult?> ValidateProducto(string codigo, string nombre, int categoriaId, int marcaId)
