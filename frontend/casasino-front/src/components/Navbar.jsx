@@ -132,7 +132,6 @@ function Navbar({ marcas, activeBrand, onSelectBrand, search, onSearch, counts, 
                   close()
                 }
               }}
-              onBlur={() => setTimeout(close, 120)}
               aria-label="Buscar productos"
               disabled={loading}
             />

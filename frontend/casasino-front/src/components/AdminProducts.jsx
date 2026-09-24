@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import * as adminApi from '../services/admin'
 import { normalizeProducto, cacheUpsertProduct, cacheRemoveProduct } from '../services/catalog'
 import ProductEditModal from './ProductEditModal'
-import { sortImagesForDisplay } from '../utils/images'
 
 function notifyCatalogChanged() {
   window.dispatchEvent(new Event('casanino:catalog-changed'))
@@ -97,18 +96,22 @@ function AdminProducts({ token }) {
     if (id) await refresh()
   }
 
+  const cleanupAfterDelete = async (item) => {
+    setItems((prev) => prev.filter((x) => x.id !== item.id))
+    try {
+      await cacheRemoveProduct(item.id)
+      notifyCatalogChanged()
+    } catch (err) {
+      console.error('Error actualizando caché tras eliminar:', err)
+    }
+  }
+
   const remove = async (item) => {
     if (!window.confirm(`¿Eliminar el producto "${item.nombre}"?`)) return
     setError('')
     try {
       await adminApi.deleteProducto(token, item.id)
-      setItems((prev) => prev.filter((x) => x.id !== item.id))
-      try {
-        await cacheRemoveProduct(item.id)
-        notifyCatalogChanged()
-      } catch (err) {
-        console.error('Error actualizando caché tras eliminar:', err)
-      }
+      await cleanupAfterDelete(item)
     } catch (err) {
       setError(err?.message || 'No se pudo eliminar')
     }
@@ -155,8 +158,8 @@ function AdminProducts({ token }) {
               {filtered.map((p) => (
                 <tr key={p.id}>
                   <td>
-                    {sortImagesForDisplay(p.imagenes)[0] ? (
-                      <img className="ac-thumb" src={sortImagesForDisplay(p.imagenes)[0]} alt="" />
+                    {p.imagenes?.find(Boolean) ? (
+                      <img className="ac-thumb" src={p.imagenes.find(Boolean)} alt="" />
                     ) : (
                       <span className="ac-thumb ac-thumb-empty" />
                     )}
@@ -166,12 +169,14 @@ function AdminProducts({ token }) {
                   <td>{p.marcaNombre}</td>
                   <td>{p.categoriaNombre}</td>
                   <td className="ac-col-actions">
-                    <button type="button" className="ac-btn" onClick={() => openEdit(p)}>
-                      Editar
-                    </button>
-                    <button type="button" className="ac-btn ac-btn-danger" onClick={() => remove(p)}>
-                      Eliminar
-                    </button>
+                    <div className="ac-cell-actions">
+                      <button type="button" className="ac-btn" onClick={() => openEdit(p)}>
+                        Editar
+                      </button>
+                      <button type="button" className="ac-btn ac-btn-danger" onClick={() => remove(p)}>
+                        Eliminar
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -188,6 +193,10 @@ function AdminProducts({ token }) {
           categorias={categorias}
           onClose={closeForm}
           onSaved={handleSaved}
+          onDeleted={(producto) => {
+            closeForm()
+            cleanupAfterDelete(producto)
+          }}
         />
       )}
     </section>

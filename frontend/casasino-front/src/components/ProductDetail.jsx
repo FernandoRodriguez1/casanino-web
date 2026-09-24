@@ -4,10 +4,31 @@ import { productWhatsappMessage, whatsappUrl } from '../utils/contact'
 
 function formatSpecs(text) {
   if (!text) return []
+  const parts = []
+  let i = 0
+  while (i < text.length) {
+    const colon = text.indexOf(':', i)
+    if (colon === -1) break
+    const period = text.indexOf('.', colon + 1)
+    if (period === -1) break
+    const key = text.slice(i, colon).trim()
+    const value = text.slice(colon + 1, period).trim()
+    if (key) parts.push(key + ':' + (value ? ` ${value}` : ''))
+    i = period + 1
+  }
+  if (parts.length > 0) return parts
   return text
     .split(/(?<!\d)\.\s+(?=[A-ZÁÉÍÓÚ])/)
     .map((s) => s.replace(/\.\s*$/, '').trim())
     .map((s) => s.replace(/\s+/g, ' '))
+    .filter(Boolean)
+}
+
+function formatDescription(text) {
+  if (!text.includes('.')) return []
+  return text
+    .split('.')
+    .map((s) => s.replace(/\s+/g, ' ').trim())
     .filter(Boolean)
 }
 
@@ -16,6 +37,7 @@ function DetailInfo({ producto, onBack, onEdit }) {
   const badgeText = isLightColor(color) ? '#000' : '#fff'
   const imgs = producto.imagenes?.filter(Boolean) ?? []
   const [current, setCurrent] = useState(0)
+  const [descExpanded, setDescExpanded] = useState(false)
   const specs = formatSpecs(producto.especificaciones)
 
   return (
@@ -75,7 +97,31 @@ function DetailInfo({ producto, onBack, onEdit }) {
             {producto.codigo && <span>Código: <strong>{producto.codigo}</strong></span>}
             {producto.modelo && <span>Modelo: <strong>{producto.modelo}</strong></span>}
           </div>
-          {producto.descripcion && <p className="detail-desc">{producto.descripcion}</p>}
+          {producto.descripcion && (() => {
+            const descItems = formatDescription(producto.descripcion)
+            if (descItems.length === 0) {
+              return <p className="detail-desc">{producto.descripcion}</p>
+            }
+            const visible = descExpanded ? descItems : descItems.slice(0, 4)
+            return (
+              <>
+                <ul className="detail-desc">
+                  {visible.map((s) => (
+                    <li key={s}>{s}.</li>
+                  ))}
+                </ul>
+                {descItems.length > 4 && (
+                  <button
+                    type="button"
+                    className="detail-desc-toggle"
+                    onClick={() => setDescExpanded((v) => !v)}
+                  >
+                    {descExpanded ? 'Ver menos' : 'Ver más'}
+                  </button>
+                )}
+              </>
+            )
+          })()}
 
           <a
             className="detail-wa"

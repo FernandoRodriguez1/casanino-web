@@ -29,6 +29,7 @@ function HomeView({
   isFullCatalog,
   loadFullCatalog,
   applyProductUpdate,
+  applyProductRemove,
   setBrand,
   selectCategoria,
   openDetail,
@@ -70,6 +71,11 @@ function HomeView({
               onSaved={(saved, id) => {
                 applyProductUpdate(saved, id)
                 setEditTarget(null)
+              }}
+              onDeleted={(producto) => {
+                applyProductRemove(producto.id)
+                setEditTarget(null)
+                closeDetail()
               }}
             />
           </Suspense>
