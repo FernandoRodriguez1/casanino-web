@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import * as adminApi from '../services/admin'
 import { normalizeProducto, cacheUpsertProduct, cacheRemoveProduct } from '../services/catalog'
 import ProductEditModal from './ProductEditModal'
-import { sortImagesForDisplay } from '../utils/images'
 
 function notifyCatalogChanged() {
   window.dispatchEvent(new Event('casanino:catalog-changed'))
@@ -155,8 +154,8 @@ function AdminProducts({ token }) {
               {filtered.map((p) => (
                 <tr key={p.id}>
                   <td>
-                    {sortImagesForDisplay(p.imagenes)[0] ? (
-                      <img className="ac-thumb" src={sortImagesForDisplay(p.imagenes)[0]} alt="" />
+                    {p.imagenes?.find(Boolean) ? (
+                      <img className="ac-thumb" src={p.imagenes.find(Boolean)} alt="" />
                     ) : (
                       <span className="ac-thumb ac-thumb-empty" />
                     )}

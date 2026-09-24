@@ -1,6 +1,5 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import * as adminApi from '../services/admin'
-import { sortImagesForDisplay } from '../utils/images'
 import { removeWhiteBackground } from '../utils/background'
 
 const empty = {
@@ -17,19 +16,23 @@ const empty = {
 function ProductEditModal({ token, producto, marcas, categorias, onClose, onSaved }) {
   const isNew = !producto || typeof producto.id !== 'number'
   const [values, setValues] = useState(empty)
-  const [imgUrls, setImgUrls] = useState([])
-  const [pending, setPending] = useState([]) // [{ file, blob, url, processed }]
-  const [toRemove, setToRemove] = useState([]) // [url]
+  const [items, setItems] = useState([]) // [{ kind: 'url', url } | { kind: 'file', file, blob, url, processed }]
+  const [removedUrls, setRemovedUrls] = useState([]) // [url]
+  const [dragIndex, setDragIndex] = useState(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [removeBg, setRemoveBg] = useState(true)
   const [processing, setProcessing] = useState(false)
 
+  const itemsRef = useRef(items)
+  useEffect(() => {
+    itemsRef.current = items
+  }, [items])
+
   const revokeAll = () => {
-    setPending((prev) => {
-      for (const p of prev) URL.revokeObjectURL(p.url)
-      return []
-    })
+    for (const item of itemsRef.current) {
+      if (item.kind === 'file') URL.revokeObjectURL(item.url)
+    }
   }
 
   useEffect(() => {
@@ -43,13 +46,19 @@ function ProductEditModal({ token, producto, marcas, categorias, onClose, onSave
       categoriaId: String(producto?.categoriaId ?? ''),
       marcaId: String(producto?.marcaId ?? ''),
     })
-    setImgUrls(sortImagesForDisplay(producto?.imagenes))
-    setToRemove([])
     revokeAll()
+    setItems((producto?.imagenes ?? []).filter(Boolean).map((url) => ({ kind: 'url', url })))
+    setRemovedUrls([])
     setError('')
+    setDragIndex(null)
   }, [producto])
 
-  useEffect(() => () => revokeAll(), [])
+  useEffect(
+    () => () => {
+      revokeAll()
+    },
+    []
+  )
 
   const change = (name, value) => setValues((v) => ({ ...v, [name]: value }))
 
@@ -58,7 +67,7 @@ function ProductEditModal({ token, producto, marcas, categorias, onClose, onSave
     if (picked.length === 0) return
     e.target.value = ''
     setProcessing(true)
-    const items = []
+    const next = []
     for (const file of picked) {
       try {
         if (removeBg) {
@@ -66,7 +75,7 @@ function ProductEditModal({ token, producto, marcas, categorias, onClose, onSave
           const blob = await removeWhiteBackground(bmp)
           bmp.close()
           if (blob) {
-            items.push({ file, blob, url: URL.createObjectURL(blob), processed: true })
+            next.push({ kind: 'file', file, blob, url: URL.createObjectURL(blob), processed: true })
             continue
           }
         }
@@ -74,20 +83,45 @@ function ProductEditModal({ token, producto, marcas, categorias, onClose, onSave
         console.warn('No se pudo quitar el fondo:', err)
       }
       const raw = URL.createObjectURL(file)
-      items.push({ file, blob: file, url: raw, processed: false })
+      next.push({ kind: 'file', file, blob: file, url: raw, processed: false })
     }
-    setPending((prev) => [...prev, ...items])
+    setItems((prev) => [...prev, ...next])
     setProcessing(false)
   }
 
-  const dropPending = (url) => {
-    URL.revokeObjectURL(url)
-    setPending((prev) => prev.filter((p) => p.url !== url))
+  const removeItem = (index) => {
+    const item = items[index]
+    if (!item) return
+    if (item.kind === 'url') {
+      setRemovedUrls((prev) => (prev.includes(item.url) ? prev : [...prev, item.url]))
+      setItems((prev) => prev.filter((_, i) => i !== index))
+    } else {
+      URL.revokeObjectURL(item.url)
+      setItems((prev) => prev.filter((_, i) => i !== index))
+    }
   }
 
-  const toggleRemove = (url) => {
-    setToRemove((prev) => (prev.includes(url) ? prev.filter((u) => u !== url) : [...prev, url]))
+  const restoreItem = (url) => {
+    setRemovedUrls((prev) => prev.filter((u) => u !== url))
+    setItems((prev) => [...prev, { kind: 'url', url }])
   }
+
+  const onDragStart = (index) => setDragIndex(index)
+  const onDrop = (targetIndex) => {
+    if (dragIndex === null || dragIndex === targetIndex) {
+      setDragIndex(null)
+      return
+    }
+    setItems((prev) => {
+      const next = [...prev]
+      const [moved] = next.splice(dragIndex, 1)
+      next.splice(targetIndex, 0, moved)
+      return next
+    })
+    setDragIndex(null)
+  }
+
+  const fileItems = items.filter((i) => i.kind === 'file')
 
   const submit = async (e) => {
     e.preventDefault()
@@ -110,8 +144,24 @@ function ProductEditModal({ token, producto, marcas, categorias, onClose, onSave
     fd.append('accesorios', (values.accesorios || '').trim())
     fd.append('categoriaId', String(values.categoriaId))
     fd.append('marcaId', String(values.marcaId))
-    for (const p of pending) fd.append('Imagenes', p.blob, p.file.name)
-    for (const url of toRemove) fd.append('ImagenesEliminar', url)
+
+    if (isNew) {
+      for (const item of items) {
+        if (item.kind === 'file') fd.append('Imagenes', item.blob ?? item.file, item.file.name)
+      }
+    } else {
+      let i = 0
+      for (const item of items) {
+        if (item.kind === 'file') {
+          fd.append('Imagenes', item.blob ?? item.file, item.file.name)
+          fd.append('ImagenesOrden', `new:${i++}`)
+        } else {
+          fd.append('ImagenesOrden', item.url)
+        }
+      }
+    }
+    for (const url of removedUrls) fd.append('ImagenesEliminar', url)
+
     try {
       const saved = isNew
         ? await adminApi.createProducto(token, fd)
@@ -182,31 +232,55 @@ function ProductEditModal({ token, producto, marcas, categorias, onClose, onSave
         </label>
 
         <div className="ac-field">
-          <span>Fotos nuevas</span>
+          <span>Fotos</span>
 
-          {imgUrls.length === 0 && pending.length === 0 && (
+          {items.length === 0 && removedUrls.length === 0 && (
             <div className="ac-img-grid">
               <span className="ac-muted">Sin foto cargada</span>
             </div>
           )}
 
-          {imgUrls.length > 0 && (
+          {items.length > 0 && (
             <>
-              <span className="ac-hint">Fotos actuales del producto (marcá "Quitar" para desvincularlas al guardar):</span>
+              <span className="ac-hint">
+                La primera foto es la portada del catálogo. Arrastrá para reordenar.
+              </span>
               <div className="ac-img-grid">
-                {imgUrls.map((u) => {
-                  const marked = toRemove.includes(u)
-                  return (
-                    <div key={u} className={`ac-photo${marked ? ' ac-photo-remove' : ''}`}>
-                      <img src={u} alt="" />
-                      {isNew ? null : (
-                        <button type="button" onClick={() => toggleRemove(u)}>
-                          {marked ? 'Restaurar' : 'Quitar'}
-                        </button>
-                      )}
-                    </div>
-                  )
-                })}
+                {items.map((item, index) => (
+                  <div
+                    key={item.url}
+                    className={`ac-photo${item.kind === 'file' ? ' ac-photo-new' : ''}${item.kind === 'file' && item.processed ? ' ac-photo-bgless' : ''}${dragIndex === index ? ' ac-photo-dragging' : ''}`}
+                    draggable
+                    onDragStart={() => onDragStart(index)}
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={() => onDrop(index)}
+                  >
+                    <img className={item.kind === 'file' && item.processed ? 'ac-photo-checker' : undefined} src={item.url} alt="" />
+                    {index === 0 && <b className="ac-photo-cover">Portada</b>}
+                    {item.kind === 'file' && item.processed && <b className="ac-photo-badge">fondo removido</b>}
+                    <button type="button" onClick={() => removeItem(index)}>
+                      {item.kind === 'url' ? 'Quitar' : '✕'}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
+          {removedUrls.length > 0 && (
+            <>
+              <span className="ac-hint">
+                {removedUrls.length === 1 ? '1 foto marcada para quitar:' : `${removedUrls.length} fotos marcadas para quitar:`}
+              </span>
+              <div className="ac-img-grid">
+                {removedUrls.map((url) => (
+                  <div key={url} className="ac-photo ac-photo-remove">
+                    <img src={url} alt="" />
+                    <button type="button" onClick={() => restoreItem(url)}>
+                      Restaurar
+                    </button>
+                  </div>
+                ))}
               </div>
             </>
           )}
@@ -215,24 +289,16 @@ function ProductEditModal({ token, producto, marcas, categorias, onClose, onSave
             <span className="ac-hint">Procesando fotos (quitando fondo)...</span>
           )}
 
-          {pending.length > 0 && (
-            <>
-              <span className="ac-hint">
-                {pending.length === 1 ? '1 foto nueva:' : `${pending.length} fotos nuevas:`}
-              </span>
-              <div className="ac-img-grid">
-                {pending.map((p) => (
-                  <div key={p.url} className={`ac-photo ac-photo-new${p.processed ? ' ac-photo-bgless' : ''}`}>
-                    <img className="ac-photo-checker" src={p.url} alt="" />
-                    {p.processed && <b className="ac-photo-badge">fondo removido</b>}
-                    <button type="button" onClick={() => dropPending(p.url)}>✕</button>
-                  </div>
-                ))}
-              </div>
-              <span className="ac-hint">
-                Se subirán al guardar. {toRemove.length > 0 && `${toRemove.length} foto(s) actual(es) marcada(s) "a quitar".`}
-              </span>
-            </>
+          {isNew === false && removedUrls.length + fileItems.length > 0 && (
+            <span className="ac-hint">
+              {removedUrls.length > 0 && `${removedUrls.length} foto(s) a quitar. `}
+              {fileItems.length > 0 && `${fileItems.length} foto(s) nueva(s) a subir. `}
+              Se guardarán al confirmar.
+            </span>
+          )}
+
+          {isNew && fileItems.length > 0 && (
+            <span className="ac-hint">{fileItems.length} foto(s) a subir. Se guardarán al confirmar.</span>
           )}
 
           <label className="ac-check">
