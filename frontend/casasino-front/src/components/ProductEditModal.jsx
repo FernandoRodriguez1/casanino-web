@@ -170,7 +170,7 @@ function ProductEditModal({ token, producto, marcas, categorias, onClose, onSave
         : await adminApi.updateProducto(token, producto.id, fd)
       onSaved?.(saved, producto?.id)
     } catch (err) {
-      setError(err?.message || 'No se pudo guardar el producto')
+      if (err?.status !== 401) setError(err?.message || 'No se pudo guardar el producto')
     } finally {
       setBusy(false)
     }
@@ -184,7 +184,7 @@ function ProductEditModal({ token, producto, marcas, categorias, onClose, onSave
       await adminApi.deleteProducto(token, producto.id)
       onDeleted?.(producto)
     } catch (err) {
-      setError(err?.message || 'No se pudo eliminar el producto')
+      if (err?.status !== 401) setError(err?.message || 'No se pudo eliminar el producto')
       setConfirmDelete(false)
       setDeleting(false)
     }

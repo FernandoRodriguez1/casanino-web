@@ -30,7 +30,7 @@ function AdminProducts({ token }) {
       setMarcas(Array.isArray(marcasList) ? marcasList : [])
       setCategorias(Array.isArray(categoriasList) ? categoriasList : [])
     } catch (err) {
-      setError(err?.message || 'No se pudieron cargar los productos')
+      if (err?.status !== 401) setError(err?.message || 'No se pudieron cargar los productos')
     } finally {
       setLoading(false)
     }
@@ -113,7 +113,7 @@ function AdminProducts({ token }) {
       await adminApi.deleteProducto(token, item.id)
       await cleanupAfterDelete(item)
     } catch (err) {
-      setError(err?.message || 'No se pudo eliminar')
+      if (err?.status !== 401) setError(err?.message || 'No se pudo eliminar')
     }
   }
 

@@ -18,7 +18,7 @@ function SimpleCrud({ title, entityLabel, api, fields }) {
       const list = await api.fetchList()
       setItems(Array.isArray(list) ? list : [])
     } catch (err) {
-      setError(err?.message || 'No se pudieron cargar los datos')
+      if (err?.status !== 401) setError(err?.message || 'No se pudieron cargar los datos')
     } finally {
       setLoading(false)
     }
@@ -91,7 +91,7 @@ function SimpleCrud({ title, entityLabel, api, fields }) {
       }
       closeForm()
     } catch (err) {
-      setFormError(err?.message || 'No se pudo guardar')
+      if (err?.status !== 401) setFormError(err?.message || 'No se pudo guardar')
     } finally {
       setFormBusy(false)
     }
@@ -104,7 +104,7 @@ function SimpleCrud({ title, entityLabel, api, fields }) {
       await api.remove(item.id)
       setItems((prev) => prev.filter((it) => it.id !== item.id))
     } catch (err) {
-      setError(err?.message || 'No se pudo eliminar')
+      if (err?.status !== 401) setError(err?.message || 'No se pudo eliminar')
     }
   }
 
