@@ -156,26 +156,20 @@ export function useCatalog() {
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
+    if (q) {
+      return allProducts.filter((p) => {
+        const haystack = [p.nombre, p.codigo, p.modelo, p.marcaNombre]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase()
+        return haystack.includes(q)
+      })
+    }
     const catId = categoriaMeta?.id
-    const base = q ? allProducts : products
-    return base.filter((p) => {
+    return products.filter((p) => {
       if (activeBrand !== 'all' && p.marcaNombre !== activeBrand) return false
       if (catId && p.categoriaId !== catId) return false
-      if (!q) return true
-      const haystack = [
-        p.nombre,
-        p.codigo,
-        p.modelo,
-        p.categoria,
-        p.marcaNombre,
-        p.descripcion,
-        p.especificaciones,
-        p.accesorios,
-      ]
-        .filter(Boolean)
-        .join(' ')
-        .toLowerCase()
-      return haystack.includes(q)
+      return true
     })
   }, [activeBrand, search, products, allProducts, categoriaMeta])
 
@@ -188,6 +182,14 @@ export function useCatalog() {
     setActiveBrand(b)
     setActiveCategoria(null)
     scrollTop()
+  }
+
+  const setSearchProduct = (value) => {
+    if (value.trim() && !search.trim()) {
+      setActiveBrand('all')
+      setActiveCategoria(null)
+    }
+    setSearch(value)
   }
 
   const selectCategoria = (slug) => {
@@ -235,6 +237,7 @@ export function useCatalog() {
     activeCategoria,
     search,
     setSearch,
+    setSearchProduct,
     status,
     products,
     marcas: sortedMarcas,

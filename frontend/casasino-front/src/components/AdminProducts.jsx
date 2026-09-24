@@ -84,6 +84,13 @@ function AdminProducts({ token }) {
         notifyCatalogChanged()
         return
       }
+      if (id) {
+        const updated = await adminApi.getProducto(token, id)
+        upsertItem(updated)
+        await cacheUpsertProduct(normalizeProducto(updated))
+        notifyCatalogChanged()
+        return
+      }
     } catch (err) {
       console.error('Error actualizando caché tras guardar:', err)
     }

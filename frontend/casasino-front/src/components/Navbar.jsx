@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { brandMeta, isLightColor } from '../utils/brand'
 
-function Navbar({ marcas, activeBrand, onSelectBrand, search, onSearch, counts, loading, showAdmin, onAdmin }) {
+function Navbar({ marcas, activeBrand, onSelectBrand, search, onSearch, counts, loading, showAdmin, onAdmin, onSearchSubmit, onSearchTyping }) {
   const [open, setOpen] = useState(false)
   const innerRef = useRef(null)
 
@@ -61,9 +61,9 @@ function Navbar({ marcas, activeBrand, onSelectBrand, search, onSearch, counts, 
             <button
               key={m.nombre}
               type="button"
-              className={`brand-tab${activeBrand === tab.key ? ' active' : ''}`}
-              style={tabStyle(tab.key, activeBrand === tab.key)}
-              onClick={() => pick(onSelectBrand, tab.key)}
+              className={`brand-tab${activeBrand === m.nombre ? ' active' : ''}`}
+              style={tabStyle(m.nombre, activeBrand === m.nombre)}
+              onClick={() => pick(onSelectBrand, m.nombre)}
               disabled={loading}
             >
               <span>{m.nombre}</span>
@@ -77,7 +77,16 @@ function Navbar({ marcas, activeBrand, onSelectBrand, search, onSearch, counts, 
             type="text"
             placeholder="Buscar productos..."
             value={search}
-            onChange={(e) => onSearch(e.target.value)}
+            onChange={(e) => {
+              onSearch(e.target.value)
+              onSearchTyping?.(e.target.value)
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault()
+                onSearchSubmit?.()
+              }
+            }}
             aria-label="Buscar productos"
             disabled={loading}
           />
@@ -112,7 +121,18 @@ function Navbar({ marcas, activeBrand, onSelectBrand, search, onSearch, counts, 
               type="text"
               placeholder="Buscar productos..."
               value={search}
-              onChange={(e) => onSearch(e.target.value)}
+              onChange={(e) => {
+                onSearch(e.target.value)
+                onSearchTyping?.(e.target.value)
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault()
+                  onSearchSubmit?.()
+                  close()
+                }
+              }}
+              onBlur={() => setTimeout(close, 120)}
               aria-label="Buscar productos"
               disabled={loading}
             />
@@ -141,7 +161,7 @@ function Navbar({ marcas, activeBrand, onSelectBrand, search, onSearch, counts, 
               <button
                 type="button"
                 className="nav-menu-btn nav-menu-cta"
-                onClick={pick(onAdmin)}
+                onClick={() => pick(onAdmin)}
               >
                 <span>Panel de administración</span>
               </button>

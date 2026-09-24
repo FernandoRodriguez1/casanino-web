@@ -75,12 +75,21 @@ function SimpleCrud({ title, entityLabel, api, fields }) {
       if (isNew) {
         const missing = fields.find((f) => f.required && !values[f.name])
         if (missing) throw new Error('Faltan campos obligatorios')
-        await api.create(values)
+        const created = await api.create(values)
+        if (created && typeof created.id !== 'undefined') {
+          setItems((prev) => [created, ...prev])
+        } else {
+          await refresh()
+        }
       } else {
         await api.update(editing.id, values)
+        const patch = {}
+        for (const f of fields) {
+          if (f.type !== 'password') patch[f.name] = values[f.name]
+        }
+        setItems((prev) => prev.map((it) => (it.id === editing.id ? { ...it, ...patch } : it)))
       }
       closeForm()
-      await refresh()
     } catch (err) {
       setFormError(err?.message || 'No se pudo guardar')
     } finally {
@@ -93,7 +102,7 @@ function SimpleCrud({ title, entityLabel, api, fields }) {
     setError('')
     try {
       await api.remove(item.id)
-      await refresh()
+      setItems((prev) => prev.filter((it) => it.id !== item.id))
     } catch (err) {
       setError(err?.message || 'No se pudo eliminar')
     }

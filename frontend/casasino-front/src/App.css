@@ -1310,6 +1310,56 @@ main {
   font-size: 12.5px;
 }
 
+.footer-logo img {
+  height: 46px;
+  width: auto;
+  max-width: 170px;
+  object-fit: contain;
+}
+
+.footer-desc {
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.55;
+  max-width: 280px;
+}
+
+.footer-contact {
+  gap: 10px;
+}
+
+.footer-link-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text);
+  text-align: left;
+  line-height: 1.4;
+}
+
+.footer-link-icon svg {
+  flex: none;
+  color: #fc4c02;
+}
+
+.footer-link-icon small {
+  display: block;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  opacity: 0.7;
+}
+
+.footer-link-icon strong {
+  color: var(--text-h);
+  font-weight: 700;
+}
+
+.footer-link-icon:hover {
+  color: var(--text-h);
+  text-decoration: none;
+}
+
 @media (max-width: 600px) {
   .footer {
     padding: 24px 16px 12px;
@@ -1329,8 +1379,25 @@ main {
     text-align: center;
   }
 
+  .footer-desc {
+    text-align: center;
+  }
+
+  .footer-link-icon {
+    justify-content: center;
+    text-align: left;
+  }
+
   .footer-bottom {
     justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .footer-links .footer-link-icon,
+  .footer-contact .footer-link-icon {
+    display: inline-flex;
+    width: auto;
   }
 }
 
@@ -2587,5 +2654,55 @@ main {
 
   .footer-brand .brand {
     justify-content: center;
+  }
+}
+
+/* ---------- Búsqueda live: anillo en la primera tarjeta ---------- */
+
+.card.card-highlight {
+  animation: card-highlight-ring 1s ease;
+}
+
+@keyframes card-highlight-ring {
+  0% {
+    box-shadow: 0 0 0 0 rgba(252, 76, 2, 0.55);
+  }
+  100% {
+    box-shadow: 0 0 0 12px rgba(252, 76, 2, 0);
+  }
+}
+
+/* ---------- Admin en mobile: header y tabla ---------- */
+
+@media (max-width: 600px) {
+  .admin-head-inner {
+    flex-wrap: wrap;
+  }
+
+  .admin-head-inner > div {
+    flex: 1 1 100%;
+  }
+
+  .admin-head-inner .ac-btn {
+    flex: 1 1 calc(50% - 6px);
+  }
+
+  .ac-table th:nth-child(4),
+  .ac-table td:nth-child(4),
+  .ac-table th:nth-child(5),
+  .ac-table td:nth-child(5) {
+    display: none;
+  }
+
+  .ac-table th:nth-child(3),
+  .ac-table td:nth-child(3) {
+    max-width: 150px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .ac-col-actions {
+    white-space: nowrap;
   }
 }

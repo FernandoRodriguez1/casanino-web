@@ -15,7 +15,7 @@ function ProductCard({ producto, onOpen }) {
   const thumbText = isLightColor(color) ? '#000' : '#fff'
 
   return (
-    <article className="card" onClick={() => onOpen(producto.id)}>
+    <article className="card" tabIndex={-1} onClick={() => onOpen(producto.id)}>
       <div className="thumb" style={{ background: `linear-gradient(135deg, ${color}, ${color}cc)`, color: thumbText }}>
         {img ? (
           <img src={img} alt={producto.nombre} loading="lazy" decoding="async" />
