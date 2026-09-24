@@ -1,4 +1,4 @@
-import { WHATSAPP_NUMBER, INSTAGRAM_URL } from '../utils/contact'
+import { WHATSAPP_NUMBER, INSTAGRAM_URL, MAPS_URL } from '../utils/contact'
 
 const CONTACT = {
   whatsapp: {
@@ -147,16 +147,26 @@ function Footer({ marcas, onSelectBrand }) {
               </a>
             </li>
             <li>
-              <span className="footer-link-icon">
+              <a
+                className="footer-link-icon"
+                href={MAPS_URL}
+                target="_blank"
+                rel="noreferrer"
+              >
                 <MapPinSvg />
                 <span>{CONTACT.direccion}</span>
-              </span>
+              </a>
             </li>
             <li>
-              <span className="footer-link-icon">
+              <a
+                className="footer-link-icon"
+                href={MAPS_URL}
+                target="_blank"
+                rel="noreferrer"
+              >
                 <HouseSvg />
                 <span>{CONTACT.ubicacion}</span>
-              </span>
+              </a>
             </li>
           </ul>
         </div>

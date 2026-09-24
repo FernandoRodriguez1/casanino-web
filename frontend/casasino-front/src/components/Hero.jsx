@@ -1,4 +1,5 @@
 import { getBrandColor } from '../utils/brand'
+import { MAPS_URL } from '../utils/contact'
 import heroBg from '../assets/casaninofoto.jpg'
 
 const ArrowRightSvg = () => (
@@ -64,7 +65,7 @@ function Hero({ activeBrand, counts, accent, onCta }) {
               {isAll ? (
                 <a
                   className="hero-subtitle-link"
-                  href="https://maps.app.goo.gl/QFrn3GYUFp7rLis57"
+                  href={MAPS_URL}
                   target="_blank"
                   rel="noopener noreferrer"
                 >
