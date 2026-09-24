@@ -27,6 +27,7 @@ public class UpdateProductoRequest
     public string? Accesorios { get; set; }
     public List<IFormFile>? Imagenes { get; set; }
     public List<string>? ImagenesEliminar { get; set; }
+    public List<string>? ImagenesOrden { get; set; }
 }
 
 public record ProductoResponse(
