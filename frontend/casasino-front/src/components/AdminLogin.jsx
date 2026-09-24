@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-function AdminLogin({ onLogin, onBack }) {
+function AdminLogin({ onLogin, onBack, notice }) {
   const [nombre, setNombre] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -52,6 +52,7 @@ function AdminLogin({ onLogin, onBack }) {
           </label>
 
           {error && <p className="ac-error">{error}</p>}
+          {notice && <p className="ac-notice">{notice}</p>}
 
           <button type="submit" className="ac-btn ac-btn-primary" disabled={busy}>
             {busy ? 'Ingresando...' : 'Ingresar'}

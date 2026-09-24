@@ -1791,6 +1791,17 @@ main {
   margin: 0;
 }
 
+.ac-notice {
+  color: #92400e;
+  font-size: 13px;
+  font-weight: 600;
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid rgba(245, 158, 11, 0.45);
+  border-radius: 10px;
+  background: rgba(245, 158, 11, 0.12);
+}
+
 .ac-muted {
   color: var(--text);
   font-size: 13px;

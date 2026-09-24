@@ -4,6 +4,8 @@ import HomeView from './components/HomeView'
 import StatusBox from './components/StatusBox'
 import { useCatalog } from './hooks/useCatalog'
 import { useAuth } from './hooks/useAuth'
+import { getMarcas } from './services/admin'
+import { setUnauthorizedHandler } from './services/api'
 import './App.css'
 
 const AdminLogin = lazy(() => import('./components/AdminLogin'))
@@ -46,13 +48,35 @@ function App() {
     window.scrollTo(0, 0)
   }, [location.pathname])
 
+  useEffect(() => {
+    if (!token) return undefined
+    let alive = true
+    getMarcas(token).catch((err) => {
+      if (err?.status === 401 && alive) logout()
+    })
+    return () => {
+      alive = false
+    }
+  }, [token, logout])
+
+  useEffect(() => {
+    if (!token) {
+      setUnauthorizedHandler(null)
+      return undefined
+    }
+    setUnauthorizedHandler(() => {
+      logout()
+      navigate('/login?expired=1', { replace: true })
+    })
+    return () => setUnauthorizedHandler(null)
+  }, [token, logout, navigate])
+
   const highlightTimer = useRef(null)
 
   const focusFirstResult = () => {
     const card = document.querySelector('.catalog .grid .card')
     if (!card) return
     card.scrollIntoView({ behavior: 'smooth', block: 'center' })
-    card.focus({ preventScroll: true })
   }
 
   const highlightFirstResult = (raw = search) => {
@@ -61,7 +85,9 @@ function App() {
     if (!card) return
     const prev = document.querySelector('.card.card-highlight')
     if (prev && prev !== card) prev.classList.remove('card-highlight')
-    card.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    if (window.matchMedia('(min-width: 601px)').matches) {
+      card.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }
     card.classList.add('card-highlight')
     if (highlightTimer.current) clearTimeout(highlightTimer.current)
     highlightTimer.current = setTimeout(() => card.classList.remove('card-highlight'), 1200)
@@ -82,6 +108,11 @@ function App() {
                   navigate('/admin')
                 }}
                 onBack={() => navigate('/')}
+                notice={
+                  new URLSearchParams(location.search).get('expired') === '1'
+                    ? 'Tu sesión expiró. Volvé a iniciar sesión.'
+                    : ''
+                }
               />
             </Suspense>
           )
