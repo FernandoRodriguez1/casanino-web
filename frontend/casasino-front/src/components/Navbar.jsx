@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { brandMeta, isLightColor } from '../utils/brand'
 
-function Navbar({ marcas, activeBrand, onSelectBrand, search, onSearch, counts, loading, showAdmin, onAdmin, onSearchSubmit }) {
+function Navbar({ marcas, activeBrand, onSelectBrand, search, onSearch, counts, loading, showAdmin, onAdmin, onSearchSubmit, onSearchTyping }) {
   const [open, setOpen] = useState(false)
   const innerRef = useRef(null)
 
@@ -77,7 +77,10 @@ function Navbar({ marcas, activeBrand, onSelectBrand, search, onSearch, counts, 
             type="text"
             placeholder="Buscar productos..."
             value={search}
-            onChange={(e) => onSearch(e.target.value)}
+            onChange={(e) => {
+              onSearch(e.target.value)
+              onSearchTyping?.(e.target.value)
+            }}
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
                 e.preventDefault()
@@ -118,7 +121,10 @@ function Navbar({ marcas, activeBrand, onSelectBrand, search, onSearch, counts, 
               type="text"
               placeholder="Buscar productos..."
               value={search}
-              onChange={(e) => onSearch(e.target.value)}
+              onChange={(e) => {
+                onSearch(e.target.value)
+                onSearchTyping?.(e.target.value)
+              }}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
                   e.preventDefault()
@@ -155,7 +161,7 @@ function Navbar({ marcas, activeBrand, onSelectBrand, search, onSearch, counts, 
               <button
                 type="button"
                 className="nav-menu-btn nav-menu-cta"
-                onClick={pick(onAdmin)}
+                onClick={() => pick(onAdmin)}
               >
                 <span>Panel de administración</span>
               </button>

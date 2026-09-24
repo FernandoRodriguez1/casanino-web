@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import HomeView from './components/HomeView'
 import StatusBox from './components/StatusBox'
@@ -45,11 +45,25 @@ function App() {
     window.scrollTo(0, 0)
   }, [location.pathname])
 
+  const highlightTimer = useRef(null)
+
   const focusFirstResult = () => {
     const card = document.querySelector('.catalog .grid .card')
     if (!card) return
     card.scrollIntoView({ behavior: 'smooth', block: 'center' })
     card.focus({ preventScroll: true })
+  }
+
+  const highlightFirstResult = (raw = search) => {
+    if (!String(raw ?? '').trim()) return
+    const card = document.querySelector('.catalog .grid .card')
+    if (!card) return
+    const prev = document.querySelector('.card.card-highlight')
+    if (prev && prev !== card) prev.classList.remove('card-highlight')
+    card.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    card.classList.add('card-highlight')
+    if (highlightTimer.current) clearTimeout(highlightTimer.current)
+    highlightTimer.current = setTimeout(() => card.classList.remove('card-highlight'), 1200)
   }
 
   return (
@@ -126,6 +140,7 @@ function App() {
             setEditTarget={setEditTarget}
             onAdmin={() => navigate('/admin')}
             onSearchSubmit={focusFirstResult}
+            onSearchTyping={highlightFirstResult}
           />
         }
       />

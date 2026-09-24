@@ -2656,3 +2656,53 @@ main {
     justify-content: center;
   }
 }
+
+/* ---------- Búsqueda live: anillo en la primera tarjeta ---------- */
+
+.card.card-highlight {
+  animation: card-highlight-ring 1s ease;
+}
+
+@keyframes card-highlight-ring {
+  0% {
+    box-shadow: 0 0 0 0 rgba(252, 76, 2, 0.55);
+  }
+  100% {
+    box-shadow: 0 0 0 12px rgba(252, 76, 2, 0);
+  }
+}
+
+/* ---------- Admin en mobile: header y tabla ---------- */
+
+@media (max-width: 600px) {
+  .admin-head-inner {
+    flex-wrap: wrap;
+  }
+
+  .admin-head-inner > div {
+    flex: 1 1 100%;
+  }
+
+  .admin-head-inner .ac-btn {
+    flex: 1 1 calc(50% - 6px);
+  }
+
+  .ac-table th:nth-child(4),
+  .ac-table td:nth-child(4),
+  .ac-table th:nth-child(5),
+  .ac-table td:nth-child(5) {
+    display: none;
+  }
+
+  .ac-table th:nth-child(3),
+  .ac-table td:nth-child(3) {
+    max-width: 150px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .ac-col-actions {
+    white-space: nowrap;
+  }
+}

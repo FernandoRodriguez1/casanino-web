@@ -40,6 +40,7 @@ function HomeView({
   setEditTarget,
   onAdmin,
   onSearchSubmit,
+  onSearchTyping,
 }) {
   const headingColor = activeBrand !== 'all' ? readableBrandColor(activeBrand) : '#0f172a'
   const heroAccent = activeBrand !== 'all' ? getBrandColor(activeBrand) : '#fc4c02'
@@ -95,6 +96,7 @@ function HomeView({
         showAdmin={isAuthed}
         onAdmin={onAdmin}
         onSearchSubmit={onSearchSubmit}
+        onSearchTyping={onSearchTyping}
       />
 
       {status === 'ready' && (
