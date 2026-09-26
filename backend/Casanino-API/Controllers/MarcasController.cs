@@ -1,6 +1,7 @@
 using Casanino_API.Data;
 using Casanino_API.DTOs;
 using Casanino_API.Models;
+using Casanino_API.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -13,10 +14,12 @@ namespace Casanino_API.Controllers;
 public class MarcasController : ControllerBase
 {
     private readonly CasaninoDbContext _context;
+    private readonly CatalogCacheService _catalogCache;
 
-    public MarcasController(CasaninoDbContext context)
+    public MarcasController(CasaninoDbContext context, CatalogCacheService catalogCache)
     {
         _context = context;
+        _catalogCache = catalogCache;
     }
 
     [HttpGet]
@@ -64,6 +67,8 @@ public class MarcasController : ControllerBase
             return Conflict(new { message = "Ya existe una marca con ese nombre" });
         }
 
+        _catalogCache.Invalidate();
+
         return CreatedAtAction(
             nameof(GetMarca),
             new { id = marca.Id },
@@ -95,6 +100,8 @@ public class MarcasController : ControllerBase
             return Conflict(new { message = "Ya existe una marca con ese nombre" });
         }
 
+        _catalogCache.Invalidate();
+
         return NoContent();
     }
 
@@ -116,6 +123,8 @@ public class MarcasController : ControllerBase
         {
             return Conflict(new { message = "No se puede eliminar: la marca tiene productos asociados" });
         }
+
+        _catalogCache.Invalidate();
 
         return NoContent();
     }

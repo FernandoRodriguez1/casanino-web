@@ -39,7 +39,15 @@ function Navbar({ marcas, activeBrand, onSelectBrand, search, onSearch, counts, 
     <header className={`navbar${open ? ' nav-open' : ''}`}>
       <div className="navbar-inner" ref={innerRef}>
         <div className="brand" onClick={() => pick(onSelectBrand, 'all')}>
-          <img className="brand-logo" src="/img/logo_casa_nino.png" alt="Casa Nino" />
+          <img
+            className="brand-logo"
+            src="/img/logo_casa_nino.webp"
+            alt="Casa Nino"
+            width="463"
+            height="448"
+            fetchPriority="high"
+            decoding="async"
+          />
           <div className="brand-text">
             <strong>Casa Nino</strong>
             <small>Catálogo de herramientas</small>

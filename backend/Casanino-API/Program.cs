@@ -1,3 +1,4 @@
+using System.IO.Compression;
 using System.Text;
 using Amazon.Runtime;
 using Amazon.S3;
@@ -8,6 +9,7 @@ using Casanino_API.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -46,6 +48,28 @@ var jwtOptions = builder.Configuration.GetSection("Jwt").Get<JwtOptions>()
 builder.Services.AddSingleton(jwtOptions);
 builder.Services.AddSingleton<TokenService>();
 builder.Services.AddSingleton<ImagenR2Service>();
+builder.Services.AddSingleton<CatalogCacheService>();
+builder.Services.AddMemoryCache();
+
+builder.Services.AddResponseCompression(options =>
+{
+    // Render termina TLS y reenvía X-Forwarded-Proto, así que en producción
+    // Request.IsHttps ya es true: sin esto no se comprime nada.
+    options.EnableForHttps = true;
+    options.Providers.Add<BrotliCompressionProvider>();
+    options.Providers.Add<GzipCompressionProvider>();
+});
+
+builder.Services.Configure<BrotliCompressionProviderOptions>(options =>
+{
+    // Optimal mapea a brotli quality 11 (máxima compresión)
+    options.Level = CompressionLevel.Optimal;
+});
+
+builder.Services.Configure<GzipCompressionProviderOptions>(options =>
+{
+    options.Level = CompressionLevel.Fastest;
+});
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -142,6 +166,8 @@ using (var scope = app.Services.CreateScope())
 
 // Configure the HTTP request pipeline.
 app.UseForwardedHeaders();
+
+app.UseResponseCompression();
 
 if (app.Environment.IsDevelopment())
 {

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import * as adminApi from '../services/admin'
-import { removeWhiteBackground } from '../utils/background'
+import { prepareImage } from '../utils/imagePrep'
 
 const empty = {
   codigo: '',
@@ -20,6 +20,7 @@ function ProductEditModal({ token, producto, marcas, categorias, onClose, onSave
   const [removedUrls, setRemovedUrls] = useState([]) // [url]
   const [dragIndex, setDragIndex] = useState(null)
   const [busy, setBusy] = useState(false)
+  const [progress, setProgress] = useState(0)
   const [error, setError] = useState('')
   const [removeBg, setRemoveBg] = useState(true)
   const [processing, setProcessing] = useState(false)
@@ -69,24 +70,15 @@ function ProductEditModal({ token, producto, marcas, categorias, onClose, onSave
     if (picked.length === 0) return
     e.target.value = ''
     setProcessing(true)
-    const next = []
-    for (const file of picked) {
-      try {
-        if (removeBg) {
-          const bmp = await createImageBitmap(file, { imageOrientation: 'from-image' })
-          const blob = await removeWhiteBackground(bmp)
-          bmp.close()
-          if (blob) {
-            next.push({ kind: 'file', file, blob, url: URL.createObjectURL(blob), processed: true })
-            continue
-          }
+    const next = await Promise.all(
+      picked.map(async (file) => {
+        const blob = await prepareImage(file, { removeBg })
+        if (blob) {
+          return { kind: 'file', file, blob, url: URL.createObjectURL(blob), processed: removeBg }
         }
-      } catch (err) {
-        console.warn('No se pudo quitar el fondo:', err)
-      }
-      const raw = URL.createObjectURL(file)
-      next.push({ kind: 'file', file, blob: file, url: raw, processed: false })
-    }
+        return { kind: 'file', file, blob: file, url: URL.createObjectURL(file), processed: false }
+      })
+    )
     setItems((prev) => [...prev, ...next])
     setProcessing(false)
   }
@@ -136,6 +128,7 @@ function ProductEditModal({ token, producto, marcas, categorias, onClose, onSave
       return
     }
     setBusy(true)
+    setProgress(0)
     setError('')
     const fd = new FormData()
     fd.append('codigo', values.codigo.trim())
@@ -165,9 +158,10 @@ function ProductEditModal({ token, producto, marcas, categorias, onClose, onSave
     for (const url of removedUrls) fd.append('ImagenesEliminar', url)
 
     try {
+      const onProgress = (value) => setProgress(value)
       const saved = isNew
-        ? await adminApi.createProducto(token, fd)
-        : await adminApi.updateProducto(token, producto.id, fd)
+        ? await adminApi.createProducto(token, fd, { onProgress })
+        : await adminApi.updateProducto(token, producto.id, fd, { onProgress })
       onSaved?.(saved, producto?.id)
     } catch (err) {
       if (err?.status !== 401) setError(err?.message || 'No se pudo guardar el producto')
@@ -349,6 +343,19 @@ function ProductEditModal({ token, producto, marcas, categorias, onClose, onSave
         </div>
 
         {error && <p className="ac-error">{error}</p>}
+
+        {busy && (
+          <div className="ac-upload" role="status" aria-live="polite">
+            <div className="ac-upload-track">
+              <div className="ac-upload-fill" style={{ width: `${Math.round(progress * 100)}%` }} />
+            </div>
+            <span className="ac-hint">
+              {progress < 1
+                ? `Subiendo fotos... ${Math.round(progress * 100)}%`
+                : 'Procesando en el servidor...'}
+            </span>
+          </div>
+        )}
 
         <div className="ac-modal-actions">
           <button type="button" className="ac-btn" onClick={onClose}>

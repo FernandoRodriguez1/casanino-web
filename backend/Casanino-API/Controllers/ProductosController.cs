@@ -16,33 +16,56 @@ public class ProductosController : ControllerBase
 {
     private readonly CasaninoDbContext _context;
     private readonly ImagenR2Service _imagenService;
+    private readonly CatalogCacheService _catalogCache;
 
-    public ProductosController(CasaninoDbContext context, ImagenR2Service imagenService)
+    public ProductosController(
+        CasaninoDbContext context,
+        ImagenR2Service imagenService,
+        CatalogCacheService catalogCache)
     {
         _context = context;
         _imagenService = imagenService;
+        _catalogCache = catalogCache;
     }
 
     [HttpGet]
     [AllowAnonymous]
     public async Task<ActionResult<IEnumerable<ProductoResponse>>> GetProductos()
     {
-        var productos = await _context.Productos
-            .OrderBy(p => p.Nombre)
-            .Select(p => new ProductoResponse(
-                p.Id,
-                p.Codigo,
-                p.Modelo,
-                p.Nombre,
-                p.Descripcion,
-                p.Imagenes,
-                p.CategoriaId,
-                p.Categoria.Nombre,
-                p.MarcaId,
-                p.Marca.Nombre,
-                p.Especificaciones,
-                p.Accesorios))
-            .ToListAsync();
+        Response.Headers.ETag = _catalogCache.ETag;
+        Response.Headers.CacheControl = "private, no-cache";
+
+        if (_catalogCache.MatchesIfNoneMatch(Request.Headers.IfNoneMatch))
+        {
+            return StatusCode(StatusCodes.Status304NotModified);
+        }
+
+        if (!_catalogCache.TryGetSnapshot(out var productos))
+        {
+            var versionAlConsultar = _catalogCache.Version;
+
+            productos = await _context.Productos
+                .OrderBy(p => p.Nombre)
+                .Select(p => new ProductoResponse(
+                    p.Id,
+                    p.Codigo,
+                    p.Modelo,
+                    p.Nombre,
+                    p.Descripcion,
+                    p.Imagenes,
+                    p.CategoriaId,
+                    p.Categoria.Nombre,
+                    p.MarcaId,
+                    p.Marca.Nombre,
+                    p.Especificaciones,
+                    p.Accesorios))
+                .ToListAsync();
+
+            if (_catalogCache.Version == versionAlConsultar)
+            {
+                _catalogCache.SetSnapshot(productos);
+            }
+        }
 
         return Ok(productos);
     }
@@ -134,6 +157,8 @@ public class ProductosController : ControllerBase
             return Conflict(new { message = "Ya existe un producto con ese código" });
         }
 
+        _catalogCache.Invalidate();
+
         return CreatedAtAction(
             nameof(GetProducto),
             new { id = producto.Id },
@@ -214,6 +239,8 @@ public class ProductosController : ControllerBase
             return Conflict(new { message = "Ya existe un producto con ese código" });
         }
 
+        _catalogCache.Invalidate();
+
         foreach (var removedUrl in eliminated)
         {
             if (!await IsUrlReferencedAsync(removedUrl))
@@ -238,6 +265,8 @@ public class ProductosController : ControllerBase
 
         _context.Productos.Remove(producto);
         await _context.SaveChangesAsync();
+
+        _catalogCache.Invalidate();
 
         if (imageKeys is not null)
         {

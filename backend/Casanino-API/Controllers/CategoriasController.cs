@@ -16,11 +16,16 @@ public class CategoriasController : ControllerBase
 {
     private readonly CasaninoDbContext _context;
     private readonly ImagenR2Service _imagenService;
+    private readonly CatalogCacheService _catalogCache;
 
-    public CategoriasController(CasaninoDbContext context, ImagenR2Service imagenService)
+    public CategoriasController(
+        CasaninoDbContext context,
+        ImagenR2Service imagenService,
+        CatalogCacheService catalogCache)
     {
         _context = context;
         _imagenService = imagenService;
+        _catalogCache = catalogCache;
     }
 
     [HttpGet]
@@ -90,6 +95,8 @@ public class CategoriasController : ControllerBase
             return Conflict(new { message = "Ya existe una categoría con ese nombre" });
         }
 
+        _catalogCache.Invalidate();
+
         return CreatedAtAction(
             nameof(GetCategoria),
             new { id = categoria.Id },
@@ -141,6 +148,8 @@ public class CategoriasController : ControllerBase
             return Conflict(new { message = "Ya existe una categoría con ese nombre" });
         }
 
+        _catalogCache.Invalidate();
+
         if (!string.IsNullOrEmpty(previousImage) && previousImage != newImage)
         {
             await DeleteImagenBestEffort(_imagenService.ExtractKey(previousImage));
@@ -169,6 +178,8 @@ public class CategoriasController : ControllerBase
         {
             return Conflict(new { message = "No se puede eliminar: la categoría tiene productos asociados" });
         }
+
+        _catalogCache.Invalidate();
 
         if (!string.IsNullOrEmpty(imageKey))
         {

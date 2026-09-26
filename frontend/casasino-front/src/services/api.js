@@ -1,5 +1,9 @@
 const BASE = import.meta.env.VITE_API_URL ?? 'https://casanino-web.onrender.com'
 
+export const API_BASE = BASE
+
+const REQUEST_TIMEOUT_MS = 30000
+
 export class ApiError extends Error {
   constructor(status, message) {
     super(message)
@@ -27,11 +31,16 @@ export async function apiFetch(path, { method = 'GET', body, token } = {}) {
   }
 
   let res
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
   try {
-    res = await fetch(`${BASE}${path}`, { method, headers, body: payload })
+    res = await fetch(`${BASE}${path}`, { method, headers, body: payload, signal: controller.signal })
   } catch (err) {
+    clearTimeout(timer)
+    if (err?.name === 'AbortError') throw new ApiError(0, 'El servidor tardó demasiado en responder')
     throw new ApiError(0, 'No se pudo conectar con el servidor')
   }
+  clearTimeout(timer)
 
   if (!res.ok) {
     if (res.status === 401 && token) unauthorizedHandler?.()

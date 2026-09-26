@@ -1,6 +1,6 @@
 import { getBrandColor } from '../utils/brand'
 import { MAPS_URL } from '../utils/contact'
-import heroBg from '../assets/casaninofoto.jpg'
+import heroBg from '../assets/casaninofoto.webp'
 
 const ArrowRightSvg = () => (
   <svg
@@ -36,7 +36,15 @@ function Hero({ activeBrand, counts, accent, onCta }) {
       className={`hero ${isAll ? 'hero-full' : 'hero-brand'}`}
       style={{ ['--hero-accent']: accent, ['--hero-accent-soft']: getBrandColor(activeBrand) }}
     >
-      <div className="hero-bg" style={{ backgroundImage: `url(${heroBg})` }} />
+      <img
+        className="hero-bg"
+        src={heroBg}
+        alt=""
+        width="1264"
+        height="842"
+        fetchPriority="high"
+        decoding="async"
+      />
       <div className="hero-overlay" />
 
       <div className="hero-max-width">

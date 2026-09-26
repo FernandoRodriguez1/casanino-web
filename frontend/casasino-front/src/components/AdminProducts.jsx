@@ -1,11 +1,21 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import * as adminApi from '../services/admin'
-import { normalizeProducto, cacheUpsertProduct, cacheRemoveProduct } from '../services/catalog'
+import {
+  normalizeProducto,
+  cacheUpsertProduct,
+  cacheRemoveProduct,
+  cacheStoreProducts,
+  cacheStoreReference,
+  readCachedProductos,
+  readCachedReference,
+} from '../services/catalog'
 import ProductEditModal from './ProductEditModal'
 
 function notifyCatalogChanged() {
   window.dispatchEvent(new Event('casanino:catalog-changed'))
 }
+
+const categoriaOf = (p) => p.categoria ?? p.categoriaNombre ?? ''
 
 function AdminProducts({ token }) {
   const [items, setItems] = useState([])
@@ -26,9 +36,22 @@ function AdminProducts({ token }) {
         adminApi.getMarcas(token),
         adminApi.getCategorias(token),
       ])
-      setItems(Array.isArray(list) ? list : [])
-      setMarcas(Array.isArray(marcasList) ? marcasList : [])
-      setCategorias(Array.isArray(categoriasList) ? categoriasList : [])
+      const productos = Array.isArray(list) ? list : []
+      const marcas = Array.isArray(marcasList) ? marcasList : []
+      const categorias = Array.isArray(categoriasList) ? categoriasList : []
+      setItems(productos)
+      setMarcas(marcas)
+      setCategorias(categorias)
+      cacheStoreProducts(productos.map(normalizeProducto)).catch(() => {})
+      cacheStoreReference({
+        categorias: categorias.map((c) => ({
+          id: c.id,
+          slug: String(c.id),
+          nombre: c.nombre,
+          imagen: c.imagen ?? null,
+        })),
+        marcas,
+      }).catch(() => {})
     } catch (err) {
       if (err?.status !== 401) setError(err?.message || 'No se pudieron cargar los productos')
     } finally {
@@ -40,11 +63,30 @@ function AdminProducts({ token }) {
     refresh()
   }, [refresh])
 
+  useEffect(() => {
+    let alive = true
+    readCachedProductos()
+      .then((list) => {
+        if (!alive || !list?.length) return
+        setItems((prev) => (prev.length === 0 ? list : prev))
+        return readCachedReference()
+      })
+      .then((reference) => {
+        if (!alive || !reference) return
+        setMarcas((prev) => (prev.length === 0 ? reference.marcas : prev))
+        setCategorias((prev) => (prev.length === 0 ? reference.categorias : prev))
+      })
+      .catch(() => {})
+    return () => {
+      alive = false
+    }
+  }, [])
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
     if (!q) return items
     return items.filter((it) =>
-      [it.nombre, it.codigo, it.modelo, it.marcaNombre, it.categoriaNombre]
+      [it.nombre, it.codigo, it.modelo, it.marcaNombre, categoriaOf(it)]
         .filter(Boolean)
         .join(' ')
         .toLowerCase()
@@ -76,24 +118,19 @@ function AdminProducts({ token }) {
 
   const handleSaved = async (saved, id) => {
     closeForm()
+    const productId = saved?.id ?? id
+    if (productId === null || typeof productId === 'undefined') return
     try {
-      if (saved && typeof saved.id !== 'undefined' && saved.id !== null) {
-        upsertItem(saved)
-        await cacheUpsertProduct(normalizeProducto(saved))
-        notifyCatalogChanged()
-        return
-      }
-      if (id) {
-        const updated = await adminApi.getProducto(token, id)
-        upsertItem(updated)
-        await cacheUpsertProduct(normalizeProducto(updated))
-        notifyCatalogChanged()
-        return
-      }
+      const resolved =
+        saved && typeof saved.id !== 'undefined' && saved.id !== null
+          ? saved
+          : await adminApi.getProducto(token, productId)
+      upsertItem(resolved)
+      cacheUpsertProduct(normalizeProducto(resolved)).catch(() => {})
+      notifyCatalogChanged()
     } catch (err) {
       console.error('Error actualizando caché tras guardar:', err)
     }
-    if (id) await refresh()
   }
 
   const cleanupAfterDelete = async (item) => {
@@ -166,8 +203,8 @@ function AdminProducts({ token }) {
                   </td>
                   <td>{p.codigo}</td>
                   <td>{p.nombre}</td>
-                  <td>{p.marcaNombre}</td>
-                  <td>{p.categoriaNombre}</td>
+                  <td>{p.marcaNombre ?? p.marca}</td>
+                  <td>{categoriaOf(p)}</td>
                   <td className="ac-col-actions">
                     <div className="ac-cell-actions">
                       <button type="button" className="ac-btn" onClick={() => openEdit(p)}>

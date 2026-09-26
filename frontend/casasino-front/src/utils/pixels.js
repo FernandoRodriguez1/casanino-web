@@ -1,4 +1,3 @@
-const MAX_PIXELS = 6000000
 const MAX_DIST = 30
 const SOFT_RADIUS = 2
 const CORNER = 10
@@ -26,12 +25,11 @@ function blurAxis(src, w, h) {
 function blurAxisY(src, w, h) {
   const out = new Float32Array(w * h)
   for (let y = 0; y < h; y++) {
-    const row = y * w
-    const up = y > 0 ? row - w : row
-    const down = y < h - 1 ? row + w : row
+    const up = y > 0 ? y - 1 : y
+    const down = y < h - 1 ? y + 1 : y
     for (let x = 0; x < w; x++) {
-      const i = row + x
-      out[i] = (src[up + x] + src[i] + src[down + x]) / 3
+      const i = y * w + x
+      out[i] = (src[up * w + x] + src[i] + src[down * w + x]) / 3
     }
   }
   return out
@@ -127,32 +125,4 @@ export function processPixels(px, w, h) {
   }
 
   return { out, bg: [bgR, bgG, bgB] }
-}
-
-export async function removeWhiteBackground(image) {
-  const w = image.width
-  const h = image.height
-  if (!w || !h || w * h > MAX_PIXELS) return null
-
-  const canvas = document.createElement('canvas')
-  canvas.width = w
-  canvas.height = h
-  const ctx = canvas.getContext('2d', { willReadFrequently: true })
-  ctx.drawImage(image, 0, 0)
-  const { data: px } = ctx.getImageData(0, 0, w, h)
-
-  const { out } = processPixels(px, w, h)
-
-  const outCanvas = document.createElement('canvas')
-  outCanvas.width = w
-  outCanvas.height = h
-  outCanvas.getContext('2d').putImageData(new ImageData(out, w, h), 0, 0)
-
-  return new Promise((resolve) => {
-    outCanvas.toBlob(
-      (blob) => resolve(blob && blob.size > 0 ? blob : null),
-      'image/webp',
-      0.93
-    )
-  })
 }

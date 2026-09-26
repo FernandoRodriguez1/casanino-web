@@ -38,9 +38,7 @@ export function useCatalog() {
         const idx = prev.findIndex((x) => x.id === product.id)
         return idx >= 0 ? prev.map((x, i) => (i === idx ? product : x)) : [product, ...prev]
       })
-      setTimeout(() => {
-        cacheUpsertProduct(product).catch(() => {})
-      }, 0)
+      cacheUpsertProduct(product).catch(() => {})
     }
     if (saved && typeof saved.id !== 'undefined' && saved.id !== null) {
       apply(normalizeProducto(saved))
@@ -51,21 +49,34 @@ export function useCatalog() {
 
   const applyProductRemove = useCallback((id) => {
     setAllProducts((prev) => prev.filter((x) => x.id !== id))
-    setTimeout(() => {
-      cacheRemoveProduct(id).catch(() => {})
-    }, 0)
+    cacheRemoveProduct(id).catch(() => {})
   }, [])
 
   useEffect(() => {
     let alive = true
-    const forceFresh = reloadTick > 0
-    loadCatalogData(!forceFresh)
-      .then(({ productos, categorias, marcas }) => {
+    loadCatalogData({ force: reloadTick > 0 })
+      .then(({ productos, categorias, marcas, background }) => {
         if (!alive) return
         setAllProducts(productos)
         setCategorias(categorias)
         setMarcas(marcas)
-        setStatus('ready')
+        const hasCache = productos.length > 0
+        if (hasCache) setStatus('ready')
+        if (!background) {
+          if (!hasCache) setStatus('error')
+          return
+        }
+        background.then((fresh) => {
+          if (!alive) return
+          if (!fresh) {
+            if (!hasCache) setStatus('error')
+            return
+          }
+          setAllProducts(fresh.productos)
+          setCategorias(fresh.categorias)
+          setMarcas(fresh.marcas)
+          setStatus('ready')
+        })
       })
       .catch((err) => {
         console.error('Error cargando catálogo:', err)
@@ -165,11 +176,7 @@ export function useCatalog() {
     if (q) {
       return allProducts.filter((p) => {
         if (!matches(p)) return false
-        const haystack = [p.nombre, p.codigo, p.modelo, p.marcaNombre]
-          .filter(Boolean)
-          .join(' ')
-          .toLowerCase()
-        return haystack.includes(q)
+        return p.search?.includes(q) ?? false
       })
     }
     return products.filter(matches)

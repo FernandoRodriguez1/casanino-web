@@ -87,7 +87,14 @@ function Footer({ marcas, onSelectBrand }) {
       <div className="footer-grid">
         <div className="footer-col footer-brand">
           <span className="footer-logo">
-            <img src="/img/logo_casa_nino.png" alt="Casa Nino" />
+            <img
+              src="/img/logo_casa_nino.webp"
+              alt="Casa Nino"
+              width="463"
+              height="448"
+              loading="lazy"
+              decoding="async"
+            />
           </span>
           <strong className="footer-title">Casa Nino</strong>
           <p className="footer-subtitle">Catálogo de herramientas</p>

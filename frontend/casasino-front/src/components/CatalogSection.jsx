@@ -61,7 +61,7 @@ function CatalogSection({
         <section
           className="band"
           style={{
-            backgroundImage: 'url(/img/band-1200.png)',
+            backgroundImage: 'url(/img/band-1200.webp)',
           }}
         >
           <div className="band-overlay">

@@ -1,4 +1,5 @@
 import { apiFetch } from './api'
+import { uploadFormData } from './upload'
 
 export function login(nombre, password) {
   return apiFetch('/api/Auth/login', { method: 'POST', body: { nombre, password } })
@@ -13,12 +14,12 @@ export function getProducto(token, id) {
   return apiFetch(`/api/Productos/${id}`, { token })
 }
 
-export function createProducto(token, formData) {
-  return apiFetch('/api/Productos', { method: 'POST', token, body: formData })
+export function createProducto(token, formData, options) {
+  return uploadFormData('/api/Productos', { method: 'POST', token, formData, ...options })
 }
 
-export function updateProducto(token, id, formData) {
-  return apiFetch(`/api/Productos/${id}`, { method: 'PUT', token, body: formData })
+export function updateProducto(token, id, formData, options) {
+  return uploadFormData(`/api/Productos/${id}`, { method: 'PUT', token, formData, ...options })
 }
 
 export function deleteProducto(token, id) {
