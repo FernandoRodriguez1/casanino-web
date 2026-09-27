@@ -20,3 +20,8 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Config local con secretos (no versionar)
+appsettings.Development.json
+appsettings.*.Local.json
+secrets.json

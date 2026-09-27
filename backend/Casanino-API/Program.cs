@@ -24,13 +24,36 @@ if (!string.IsNullOrWhiteSpace(port))
 
 // Add services to the container.
 
+// Guard de arranque: una connection string vacía o mal escrita en el panel de
+// hosting fallaba recién en el primer request, con un error de Npgsql
+// incomprensible. Con doble guion bajo en la variable de entorno, no con ":".
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
+if (string.IsNullOrWhiteSpace(connectionString))
+{
+    throw new InvalidOperationException(
+        "Falta la connection string de la base de datos. " +
+        "Definí la variable de entorno ConnectionStrings__DefaultConnection " +
+        "(doble guion bajo) o la clave \"ConnectionStrings:DefaultConnection\" en appsettings.");
+}
+
 builder.Services.AddDbContext<CasaninoDbContext>(options =>
     options.UseNpgsql(
-        builder.Configuration.GetConnectionString("DefaultConnection"),
+        connectionString,
         npgsql => npgsql.EnableRetryOnFailure()));
 
 var r2Options = builder.Configuration.GetSection("CloudflareR2").Get<CloudflareR2Options>()
     ?? throw new InvalidOperationException("Falta la configuración CloudflareR2");
+
+// Los secretos viven en variables de entorno. Si faltan, cortamos el arranque
+// con un mensaje claro en vez de fallar en el primer request.
+if (string.IsNullOrWhiteSpace(r2Options.AccessKey) || string.IsNullOrWhiteSpace(r2Options.SecretKey))
+{
+    throw new InvalidOperationException(
+        "Faltan las credenciales de CloudflareR2. Definí las variables de entorno " +
+        "CloudflareR2__AccessKey y CloudflareR2__SecretKey (doble guion bajo) " +
+        "o las claves \"CloudflareR2:AccessKey\" y \"CloudflareR2:SecretKey\" en appsettings.");
+}
 
 builder.Services.AddSingleton(r2Options);
 
@@ -44,6 +67,16 @@ builder.Services.AddSingleton<IAmazonS3>(_ => new AmazonS3Client(
 
 var jwtOptions = builder.Configuration.GetSection("Jwt").Get<JwtOptions>()
     ?? throw new InvalidOperationException("Falta la configuración Jwt");
+
+// El SymmetricSecurityKey se arma adentro del AddJwtBearer, que corre de forma
+// perezosa en el primer request: sin este guard una clave vacía explodingaba con
+// un IDX10703 incomprensible en vez de al arrancar.
+if (string.IsNullOrWhiteSpace(jwtOptions.Key))
+{
+    throw new InvalidOperationException(
+        "Falta la clave de firma de JWT. Definí la variable de entorno Jwt__Key " +
+        "(doble guion bajo) o la clave \"Jwt:Key\" en appsettings.");
+}
 
 builder.Services.AddSingleton(jwtOptions);
 builder.Services.AddSingleton<TokenService>();
