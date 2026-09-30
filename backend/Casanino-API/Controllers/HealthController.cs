@@ -31,7 +31,10 @@ public class HealthController : ControllerBase
         _logger = logger;
     }
 
+    // UptimeRobot (plan free) manda HEAD por defecto en los monitores HTTP; GET
+    // sólo en los de tipo Keyword. Por eso la acción acepta ambos métodos.
     [HttpGet("database")]
+    [HttpHead("database")]
     public async Task<IActionResult> Database(CancellationToken cancellationToken)
     {
         var expectedKey = _configuration["HealthCheck:Key"];
