@@ -8,7 +8,8 @@ using Microsoft.EntityFrameworkCore;
 namespace Casanino_API.Controllers;
 
 // Ping diario para que Supabase no pause el proyecto del plan free por inactividad.
-// No lleva [Authorize]: se protege con la clave propia del header X-Health-Key.
+// No lleva [Authorize]: se protege con la clave propia, vía header X-Health-Key
+// o query ?key= (para monitores como UptimeRobot que no mandan headers).
 [ApiController]
 [Route("api/health")]
 [AllowAnonymous]
@@ -43,6 +44,13 @@ public class HealthController : ControllerBase
         }
 
         var providedKey = Request.Headers[KeyHeaderName].ToString();
+
+        // UptimeRobot (plan free) no manda headers custom: sólo una URL. Por eso
+        // la clave también se acepta por query. El header tiene prioridad.
+        if (string.IsNullOrEmpty(providedKey))
+        {
+            providedKey = Request.Query["key"].ToString();
+        }
 
         if (!KeysMatch(expectedKey, providedKey))
         {
