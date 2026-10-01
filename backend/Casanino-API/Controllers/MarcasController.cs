@@ -176,7 +176,7 @@ public class MarcasController : ControllerBase
         }
         catch (DbUpdateException)
         {
-            return Conflict(new { message = "No se puede eliminar: la marca tiene productos asociados" });
+            return Conflict(new { message = "No se puede eliminar: la marca tiene productos o categorías asociados" });
         }
 
         _catalogCache.Invalidate();

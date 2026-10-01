@@ -7,4 +7,5 @@ public class Marca
     public string? Imagen { get; set; }
 
     public ICollection<Producto> Productos { get; set; } = new List<Producto>();
+    public ICollection<Categoria> Categorias { get; set; } = new List<Categoria>();
 }

@@ -34,7 +34,7 @@ public class CategoriasController : ControllerBase
     {
         var categorias = await _context.Categorias
             .OrderBy(c => c.Nombre)
-            .Select(c => new CategoriaResponse(c.Id, c.Nombre, c.Imagen))
+            .Select(c => new CategoriaResponse(c.Id, c.Nombre, c.Imagen, c.MarcaId))
             .ToListAsync();
 
         return Ok(categorias);
@@ -50,7 +50,7 @@ public class CategoriasController : ControllerBase
             return NotFound(new { message = $"No se encontró la categoría con id {id}" });
         }
 
-        return Ok(new CategoriaResponse(categoria.Id, categoria.Nombre, categoria.Imagen));
+        return Ok(new CategoriaResponse(categoria.Id, categoria.Nombre, categoria.Imagen, categoria.MarcaId));
     }
 
     [HttpPost]
@@ -59,6 +59,11 @@ public class CategoriasController : ControllerBase
         if (string.IsNullOrWhiteSpace(dto.Nombre))
         {
             return BadRequest(new { message = "El nombre es obligatorio" });
+        }
+
+        if (dto.MarcaId is not null && !await _context.Marcas.AnyAsync(m => m.Id == dto.MarcaId))
+        {
+            return BadRequest(new { message = $"La marca con id {dto.MarcaId} no existe" });
         }
 
         string? imagenKey = null;
@@ -82,7 +87,8 @@ public class CategoriasController : ControllerBase
         var categoria = new Categoria
         {
             Nombre = dto.Nombre.Trim(),
-            Imagen = imagenKey is null ? null : _imagenService.BuildPublicUrl(imagenKey)
+            Imagen = imagenKey is null ? null : _imagenService.BuildPublicUrl(imagenKey),
+            MarcaId = dto.MarcaId
         };
 
         try
@@ -100,7 +106,7 @@ public class CategoriasController : ControllerBase
         return CreatedAtAction(
             nameof(GetCategoria),
             new { id = categoria.Id },
-            new CategoriaResponse(categoria.Id, categoria.Nombre, categoria.Imagen));
+            new CategoriaResponse(categoria.Id, categoria.Nombre, categoria.Imagen, categoria.MarcaId));
     }
 
     [HttpPut("{id}")]
@@ -109,6 +115,11 @@ public class CategoriasController : ControllerBase
         if (string.IsNullOrWhiteSpace(dto.Nombre))
         {
             return BadRequest(new { message = "El nombre es obligatorio" });
+        }
+
+        if (dto.MarcaId is not null && !await _context.Marcas.AnyAsync(m => m.Id == dto.MarcaId))
+        {
+            return BadRequest(new { message = $"La marca con id {dto.MarcaId} no existe" });
         }
 
         var categoria = await _context.Categorias.FindAsync(id);
@@ -138,6 +149,7 @@ public class CategoriasController : ControllerBase
 
         categoria.Nombre = dto.Nombre.Trim();
         categoria.Imagen = newImage;
+        categoria.MarcaId = dto.MarcaId;
 
         try
         {
