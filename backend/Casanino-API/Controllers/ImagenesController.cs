@@ -54,7 +54,16 @@ public class ImagenesController : ControllerBase
             categoria.Imagen = null;
         }
 
-        if (productos.Count > 0 || categorias.Count > 0)
+        var marcas = await _context.Marcas
+            .Where(m => m.Imagen == cleanUrl)
+            .ToListAsync();
+
+        foreach (var marca in marcas)
+        {
+            marca.Imagen = null;
+        }
+
+        if (productos.Count > 0 || categorias.Count > 0 || marcas.Count > 0)
         {
             await _context.SaveChangesAsync();
         }

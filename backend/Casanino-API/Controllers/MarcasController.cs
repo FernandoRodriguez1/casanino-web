@@ -5,6 +5,7 @@ using Casanino_API.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using SixLabors.ImageSharp;
 
 namespace Casanino_API.Controllers;
 
@@ -14,11 +15,16 @@ namespace Casanino_API.Controllers;
 public class MarcasController : ControllerBase
 {
     private readonly CasaninoDbContext _context;
+    private readonly ImagenR2Service _imagenService;
     private readonly CatalogCacheService _catalogCache;
 
-    public MarcasController(CasaninoDbContext context, CatalogCacheService catalogCache)
+    public MarcasController(
+        CasaninoDbContext context,
+        ImagenR2Service imagenService,
+        CatalogCacheService catalogCache)
     {
         _context = context;
+        _imagenService = imagenService;
         _catalogCache = catalogCache;
     }
 
@@ -28,7 +34,7 @@ public class MarcasController : ControllerBase
     {
         var marcas = await _context.Marcas
             .OrderBy(m => m.Nombre)
-            .Select(m => new MarcaResponse(m.Id, m.Nombre))
+            .Select(m => new MarcaResponse(m.Id, m.Nombre, m.Imagen))
             .ToListAsync();
 
         return Ok(marcas);
@@ -44,18 +50,40 @@ public class MarcasController : ControllerBase
             return NotFound(new { message = $"No se encontró la marca con id {id}" });
         }
 
-        return Ok(new MarcaResponse(marca.Id, marca.Nombre));
+        return Ok(new MarcaResponse(marca.Id, marca.Nombre, marca.Imagen));
     }
 
     [HttpPost]
-    public async Task<ActionResult<MarcaResponse>> CreateMarca([FromBody] CreateMarcaRequest dto)
+    public async Task<ActionResult<MarcaResponse>> CreateMarca([FromForm] CreateMarcaRequest dto)
     {
         if (string.IsNullOrWhiteSpace(dto.Nombre))
         {
             return BadRequest(new { message = "El nombre es obligatorio" });
         }
 
-        var marca = new Marca { Nombre = dto.Nombre.Trim() };
+        string? imagenKey = null;
+
+        if (dto.Imagen is not null && dto.Imagen.Length > 0)
+        {
+            if (dto.Imagen.Length > ImagenR2Service.MaxFileSize)
+            {
+                return BadRequest(new { message = "La imagen excede el tamaño máximo de 10 MB" });
+            }
+
+            var result = await UploadImagen(dto.Imagen, dto.Nombre);
+            if (result.Error is not null)
+            {
+                return result.Error;
+            }
+
+            imagenKey = result.Key;
+        }
+
+        var marca = new Marca
+        {
+            Nombre = dto.Nombre.Trim(),
+            Imagen = imagenKey is null ? null : _imagenService.BuildPublicUrl(imagenKey)
+        };
 
         try
         {
@@ -72,11 +100,11 @@ public class MarcasController : ControllerBase
         return CreatedAtAction(
             nameof(GetMarca),
             new { id = marca.Id },
-            new MarcaResponse(marca.Id, marca.Nombre));
+            new MarcaResponse(marca.Id, marca.Nombre, marca.Imagen));
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateMarca(int id, [FromBody] UpdateMarcaRequest dto)
+    public async Task<IActionResult> UpdateMarca(int id, [FromForm] UpdateMarcaRequest dto)
     {
         if (string.IsNullOrWhiteSpace(dto.Nombre))
         {
@@ -89,7 +117,27 @@ public class MarcasController : ControllerBase
             return NotFound(new { message = $"No se encontró la marca con id {id}" });
         }
 
+        var previousImage = marca.Imagen;
+        var newImage = marca.Imagen;
+
+        if (dto.Imagen is not null && dto.Imagen.Length > 0)
+        {
+            if (dto.Imagen.Length > ImagenR2Service.MaxFileSize)
+            {
+                return BadRequest(new { message = "La imagen excede el tamaño máximo de 10 MB" });
+            }
+
+            var result = await UploadImagen(dto.Imagen, dto.Nombre);
+            if (result.Error is not null)
+            {
+                return result.Error;
+            }
+
+            newImage = _imagenService.BuildPublicUrl(result.Key!);
+        }
+
         marca.Nombre = dto.Nombre.Trim();
+        marca.Imagen = newImage;
 
         try
         {
@@ -101,6 +149,11 @@ public class MarcasController : ControllerBase
         }
 
         _catalogCache.Invalidate();
+
+        if (!string.IsNullOrEmpty(previousImage) && previousImage != newImage)
+        {
+            await DeleteImagenBestEffort(_imagenService.ExtractKey(previousImage));
+        }
 
         return NoContent();
     }
@@ -114,6 +167,8 @@ public class MarcasController : ControllerBase
             return NotFound(new { message = $"No se encontró la marca con id {id}" });
         }
 
+        var imageKey = marca.Imagen;
+
         try
         {
             _context.Marcas.Remove(marca);
@@ -126,6 +181,39 @@ public class MarcasController : ControllerBase
 
         _catalogCache.Invalidate();
 
+        if (!string.IsNullOrEmpty(imageKey))
+        {
+            await DeleteImagenBestEffort(_imagenService.ExtractKey(imageKey));
+        }
+
         return NoContent();
+    }
+
+    private async Task<(string? Key, ActionResult? Error)> UploadImagen(IFormFile file, string nombre)
+    {
+        try
+        {
+            var key = await _imagenService.UploadMarcaAsync(file, nombre);
+            return (key, null);
+        }
+        catch (UnknownImageFormatException)
+        {
+            return (null, BadRequest(new { message = "El archivo de imagen no es válido" }));
+        }
+        catch (InvalidImageContentException)
+        {
+            return (null, BadRequest(new { message = "El archivo de imagen está corrupto o no es válido" }));
+        }
+    }
+
+    private async Task DeleteImagenBestEffort(string key)
+    {
+        try
+        {
+            await _imagenService.DeleteAsync(key);
+        }
+        catch (Exception)
+        {
+        }
     }
 }

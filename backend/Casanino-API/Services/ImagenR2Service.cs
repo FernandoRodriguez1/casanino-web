@@ -64,6 +64,20 @@ public class ImagenR2Service
         return UploadAsync(file, $"categoria/{slug}.webp", ct);
     }
 
+    public Task<string> UploadMarcaAsync(IFormFile file, string nombre, CancellationToken ct = default)
+    {
+        var safeFileName = StringHelper.SanitizeFileName(file.FileName);
+        var slug = StringHelper.Slug(nombre);
+
+        if (string.IsNullOrEmpty(slug))
+        {
+            slug = StringHelper.Slug(safeFileName);
+        }
+
+        var unique = Guid.NewGuid().ToString("N")[..8];
+        return UploadAsync(file, $"marca/{slug}_{unique}.webp", ct);
+    }
+
     public Task DeleteAsync(string key, CancellationToken ct = default) =>
         _s3.DeleteObjectAsync(_options.BucketName, key, ct);
 

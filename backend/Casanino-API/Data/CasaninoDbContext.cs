@@ -34,6 +34,7 @@ public class CasaninoDbContext : DbContext
             entity.Property(m => m.Id).HasColumnName("id").UseSerialColumn();
             entity.Property(m => m.Nombre).HasColumnName("nombre").HasMaxLength(100).IsRequired();
             entity.HasIndex(m => m.Nombre).IsUnique();
+            entity.Property(m => m.Imagen).HasColumnName("imagen");
         });
 
         modelBuilder.Entity<Administrador>(entity =>
