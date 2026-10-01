@@ -25,6 +25,12 @@ public class CasaninoDbContext : DbContext
             entity.Property(c => c.Nombre).HasColumnName("nombre").HasMaxLength(100).IsRequired();
             entity.HasIndex(c => c.Nombre).IsUnique();
             entity.Property(c => c.Imagen).HasColumnName("imagen");
+            entity.Property(c => c.MarcaId).HasColumnName("marca_id");
+
+            entity.HasOne(c => c.Marca)
+                .WithMany(m => m.Categorias)
+                .HasForeignKey(c => c.MarcaId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<Marca>(entity =>
