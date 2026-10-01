@@ -8,12 +8,9 @@ import {
   cacheStoreReference,
   readCachedProductos,
   readCachedReference,
+  notifyCatalogChanged,
 } from '../services/catalog'
 import ProductEditModal from './ProductEditModal'
-
-function notifyCatalogChanged() {
-  window.dispatchEvent(new Event('casanino:catalog-changed'))
-}
 
 const categoriaOf = (p) => p.categoria ?? p.categoriaNombre ?? ''
 
@@ -43,15 +40,8 @@ function AdminProducts({ token }) {
       setMarcas(marcas)
       setCategorias(categorias)
       cacheStoreProducts(productos.map(normalizeProducto)).catch(() => {})
-      cacheStoreReference({
-        categorias: categorias.map((c) => ({
-          id: c.id,
-          slug: String(c.id),
-          nombre: c.nombre,
-          imagen: c.imagen ?? null,
-        })),
-        marcas,
-      }).catch(() => {})
+      // cacheStoreReference normaliza marcas y categorias internamente.
+      cacheStoreReference({ categorias, marcas }).catch(() => {})
     } catch (err) {
       if (err?.status !== 401) setError(err?.message || 'No se pudieron cargar los productos')
     } finally {

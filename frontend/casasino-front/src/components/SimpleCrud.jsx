@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
-function SimpleCrud({ title, entityLabel, api, fields }) {
+function SimpleCrud({ title, entityLabel, api, fields, onChange }) {
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -10,6 +10,10 @@ function SimpleCrud({ title, entityLabel, api, fields }) {
   const [formBusy, setFormBusy] = useState(false)
   const [formError, setFormError] = useState('')
   const [formValues, setFormValues] = useState({})
+  const [file, setFile] = useState(null)
+  const [preview, setPreview] = useState('')
+
+  const imageField = fields.find((f) => f.type === 'file')?.name ?? 'imagen'
 
   const refresh = useCallback(async () => {
     setLoading(true)
@@ -36,6 +40,13 @@ function SimpleCrud({ title, entityLabel, api, fields }) {
     }
   }, [editing, fields])
 
+  useEffect(
+    () => () => {
+      if (preview) URL.revokeObjectURL(preview)
+    },
+    [preview]
+  )
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
     if (!q) return items
@@ -46,6 +57,8 @@ function SimpleCrud({ title, entityLabel, api, fields }) {
     const base = {}
     for (const f of fields) base[f.name] = ''
     setFormValues(base)
+    setFile(null)
+    setPreview('')
     setIsNew(true)
     setEditing({})
     setFormError('')
@@ -53,17 +66,39 @@ function SimpleCrud({ title, entityLabel, api, fields }) {
 
   const openEdit = (item) => {
     setEditing(item)
-    setIsNew(false)
+    setFile(null)
+    setPreview('')
     setFormError('')
   }
 
   const closeForm = () => {
     setEditing(null)
     setIsNew(false)
+    setFile(null)
+    setPreview('')
     setFormError('')
   }
 
   const change = (name, value) => setFormValues((v) => ({ ...v, [name]: value }))
+
+  // Le avisa a quien corresponda (p.ej. AdminPanel) la lista ya autoritativa.
+  // Este componente no sabe nada del catálogo público.
+  const notifyChange = async () => {
+    if (!onChange) return
+    try {
+      const list = await api.fetchList()
+      await onChange(Array.isArray(list) ? list : [])
+    } catch {
+      /* la lista local ya quedó actualizada */
+    }
+  }
+
+  const pickFile = (e) => {
+    const picked = e.target.files?.[0] ?? null
+    e.target.value = ''
+    setFile(picked)
+    setPreview(picked ? URL.createObjectURL(picked) : '')
+  }
 
   const submit = async (e) => {
     e.preventDefault()
@@ -71,24 +106,37 @@ function SimpleCrud({ title, entityLabel, api, fields }) {
     setFormError('')
     try {
       let values = {}
-      for (const f of fields) values[f.name] = formValues[f.name]?.trim() ?? ''
+      // Los campos type:'file' no van en values: se pasan aparte como File.
+      for (const f of fields) {
+        if (f.type === 'file') continue
+        values[f.name] = formValues[f.name]?.trim() ?? ''
+      }
       if (isNew) {
         const missing = fields.find((f) => f.required && !values[f.name])
         if (missing) throw new Error('Faltan campos obligatorios')
-        const created = await api.create(values)
+        const created = await api.create(values, file)
         if (created && typeof created.id !== 'undefined') {
           setItems((prev) => [created, ...prev])
         } else {
           await refresh()
         }
       } else {
-        await api.update(editing.id, values)
-        const patch = {}
-        for (const f of fields) {
-          if (f.type !== 'password') patch[f.name] = values[f.name]
+        await api.update(editing.id, values, file)
+        if (file) {
+          // El PUT responde 204, asi que la URL nueva solo se conoce refetchando.
+          await refresh()
+        } else {
+          const patch = {}
+          for (const f of fields) {
+            // Los files no entran en values: si se saltaran, patch[f.name]
+            // seria undefined y pisaria el logo existente con null.
+            if (f.type === 'password' || f.type === 'file') continue
+            patch[f.name] = values[f.name]
+          }
+          setItems((prev) => prev.map((it) => (it.id === editing.id ? { ...it, ...patch } : it)))
         }
-        setItems((prev) => prev.map((it) => (it.id === editing.id ? { ...it, ...patch } : it)))
       }
+      await notifyChange()
       closeForm()
     } catch (err) {
       if (err?.status !== 401) setFormError(err?.message || 'No se pudo guardar')
@@ -103,6 +151,7 @@ function SimpleCrud({ title, entityLabel, api, fields }) {
     try {
       await api.remove(item.id)
       setItems((prev) => prev.filter((it) => it.id !== item.id))
+      await notifyChange()
     } catch (err) {
       if (err?.status !== 401) setError(err?.message || 'No se pudo eliminar')
     }
@@ -136,6 +185,9 @@ function SimpleCrud({ title, entityLabel, api, fields }) {
         <div className="ac-list">
           {filtered.map((item) => (
             <div key={item.id} className="ac-row">
+              {item[imageField] && (
+                <img className="ac-thumb" src={item[imageField]} alt="" loading="lazy" />
+              )}
               <div className="ac-row-main">
                 <strong>{item.nombre}</strong>
                 <span className="ac-muted">ID {item.id}</span>
@@ -158,19 +210,44 @@ function SimpleCrud({ title, entityLabel, api, fields }) {
           <form className="ac-modal-card" onSubmit={submit}>
             <h3>{isNew ? `Nuevo ${entityLabel}` : `Editar ${entityLabel}`}</h3>
 
-            {fields.map((f) => (
-              <label key={f.name} className="ac-field">
-                <span>{f.label}{f.required ? ' *' : ''}</span>
-                <input
-                  type={f.type || 'text'}
-                  value={formValues[f.name] ?? ''}
-                  placeholder={f.placeholder}
-                  onChange={(e) => change(f.name, e.target.value)}
-                  autoComplete="off"
-                  required={isNew && f.required}
-                />
-              </label>
-            ))}
+            {fields.map((f) =>
+              f.type === 'file' ? (
+                <div key={f.name} className="ac-field">
+                  <span>{f.label}</span>
+                  {(preview || editing?.[f.name]) && (
+                    <img
+                      className="ac-file-preview"
+                      src={preview || editing?.[f.name]}
+                      alt=""
+                    />
+                  )}
+                  <input
+                    type="file"
+                    accept={f.accept || 'image/*'}
+                    onChange={pickFile}
+                    disabled={formBusy}
+                  />
+                  <span className="ac-hint">
+                    {f.hint ??
+                      (editing?.[f.name]
+                        ? 'Elegir un archivo reemplaza el logo actual.'
+                        : 'Opcional.')}
+                  </span>
+                </div>
+              ) : (
+                <label key={f.name} className="ac-field">
+                  <span>{f.label}{f.required ? ' *' : ''}</span>
+                  <input
+                    type={f.type || 'text'}
+                    value={formValues[f.name] ?? ''}
+                    placeholder={f.placeholder}
+                    onChange={(e) => change(f.name, e.target.value)}
+                    autoComplete="off"
+                    required={isNew && f.required}
+                  />
+                </label>
+              )
+            )}
 
             {formError && <p className="ac-error">{formError}</p>}
 

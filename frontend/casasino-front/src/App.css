@@ -181,10 +181,8 @@ main {
   position: absolute;
   inset: 0;
   z-index: 1;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center;
+  background-size: cover;
+  background-position: center;
   opacity: 0.6;
   transform: scale(1.02);
   filter: saturate(1.05);
@@ -724,6 +722,7 @@ main {
 .cats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 260px));
+  grid-auto-rows: 1fr;
   gap: 16px;
   justify-content: center;
 }
@@ -748,23 +747,45 @@ main {
   border-color: var(--swipper-accent, #fc4c02);
 }
 
+/* Plate de logo: caja fija y simétrica para que ninguna card se desvíe. */
 .cat-brand-img {
   display: flex;
   align-items: center;
   justify-content: center;
   height: 96px;
-  padding: 18px 20px 2px;
+  padding: 14px 20px;
 }
 
+/* width/height al 100% + contain: el logo nunca se deforma y la caja no
+   salta de tamaño mientras carga la imagen. El max-width evita que un logo
+   panorámico ocupe todo el ancho de la card. */
 .cat-brand-img img {
-  max-width: 100%;
-  max-height: 100%;
+  width: 100%;
+  height: 100%;
+  max-width: 180px;
   object-fit: contain;
   display: block;
 }
 
+.cat-brand-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 10px;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+/* Alto fijo para 2 líneas: un nombre largo no rompe la retícula. */
 .cat-name {
-  display: block;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  height: 58px;
   font-size: 17px;
   font-weight: 700;
   line-height: 1.3;
@@ -944,11 +965,6 @@ main {
   gap: 18px;
   margin-top: 24px;
   scroll-margin-top: 96px;
-}
-
-.grid > .card {
-  content-visibility: auto;
-  contain-intrinsic-size: auto 290px;
 }
 
 .band {
@@ -1791,26 +1807,6 @@ main {
   color: var(--text);
 }
 
-.ac-upload {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.ac-upload-track {
-  height: 6px;
-  border-radius: 999px;
-  background: var(--border);
-  overflow: hidden;
-}
-
-.ac-upload-fill {
-  height: 100%;
-  border-radius: 999px;
-  background: var(--hero-accent, #fc4c02);
-  transition: width 0.15s linear;
-}
-
 .ac-error {
   color: #dc2626;
   font-size: 13px;
@@ -2011,7 +2007,7 @@ main {
 .ac-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 12px;
   padding: 12px 4px;
   border-bottom: 1px solid var(--border);
@@ -2038,6 +2034,17 @@ main {
   display: flex;
   gap: 8px;
   flex-shrink: 0;
+  margin-left: auto;
+}
+
+.ac-file-preview {
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  display: block;
 }
 
 .ac-table-wrap {

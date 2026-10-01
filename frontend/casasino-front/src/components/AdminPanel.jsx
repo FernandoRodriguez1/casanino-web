@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import * as adminApi from '../services/admin'
+import { cacheStoreReference, notifyCatalogChanged } from '../services/catalog'
 import SimpleCrud from './SimpleCrud'
 import AdminProducts from './AdminProducts'
 
@@ -10,14 +11,26 @@ const TABS = [
   { key: 'admins', label: 'Administradores' },
 ]
 
+const LOGO_HINT = 'PNG con transparencia ideal, ya recortado y sin márgenes blancos.'
+
 function AdminPanel({ token, onLogout, onBack }) {
   const [tab, setTab] = useState('productos')
+
+  // Las marcas y categorías alimentan el catálogo público, así que al guardar
+  // hay que refrescar la caché de referencia y avisarle a useCatalog.
+  const syncReference = useCallback(async (key, list) => {
+    await cacheStoreReference({ [key]: list })
+    notifyCatalogChanged()
+  }, [])
+
+  const syncMarcas = useCallback((list) => syncReference('marcas', list), [syncReference])
+  const syncCategorias = useCallback((list) => syncReference('categorias', list), [syncReference])
 
   const categoriaApi = useMemo(
     () => ({
       fetchList: () => adminApi.getCategorias(token),
-      create: (v) => adminApi.createCategoria(token, v.nombre),
-      update: (id, v) => adminApi.updateCategoria(token, id, v.nombre),
+      create: (v, file) => adminApi.createCategoria(token, v.nombre, file),
+      update: (id, v, file) => adminApi.updateCategoria(token, id, v.nombre, file),
       remove: (id) => adminApi.deleteCategoria(token, id),
     }),
     [token]
@@ -26,8 +39,8 @@ function AdminPanel({ token, onLogout, onBack }) {
   const marcaApi = useMemo(
     () => ({
       fetchList: () => adminApi.getMarcas(token),
-      create: (v) => adminApi.createMarca(token, v.nombre),
-      update: (id, v) => adminApi.updateMarca(token, id, v.nombre),
+      create: (v, file) => adminApi.createMarca(token, v.nombre, file),
+      update: (id, v, file) => adminApi.updateMarca(token, id, v.nombre, file),
       remove: (id) => adminApi.deleteMarca(token, id),
     }),
     [token]
@@ -84,7 +97,11 @@ function AdminPanel({ token, onLogout, onBack }) {
             title="Categorías"
             entityLabel="categoría"
             api={categoriaApi}
-            fields={[{ name: 'nombre', label: 'Nombre', required: true }]}
+            onChange={syncCategorias}
+            fields={[
+              { name: 'nombre', label: 'Nombre', required: true },
+              { name: 'imagen', label: 'Logo', type: 'file', accept: 'image/*', hint: LOGO_HINT },
+            ]}
           />
         )}
         {tab === 'marcas' && (
@@ -92,7 +109,11 @@ function AdminPanel({ token, onLogout, onBack }) {
             title="Marcas"
             entityLabel="marca"
             api={marcaApi}
-            fields={[{ name: 'nombre', label: 'Nombre', required: true }]}
+            onChange={syncMarcas}
+            fields={[
+              { name: 'nombre', label: 'Nombre', required: true },
+              { name: 'imagen', label: 'Logo', type: 'file', accept: 'image/*', hint: LOGO_HINT },
+            ]}
           />
         )}
         {tab === 'admins' && (

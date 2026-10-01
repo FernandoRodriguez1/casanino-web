@@ -4,6 +4,7 @@ import {
   normalizeProducto,
   fetchProductoById,
   readCachedProductos,
+  readCachedReference,
   cacheUpsertProduct,
   cacheRemoveProduct,
 } from '../services/catalog'
@@ -38,7 +39,9 @@ export function useCatalog() {
         const idx = prev.findIndex((x) => x.id === product.id)
         return idx >= 0 ? prev.map((x, i) => (i === idx ? product : x)) : [product, ...prev]
       })
-      cacheUpsertProduct(product).catch(() => {})
+      setTimeout(() => {
+        cacheUpsertProduct(product).catch(() => {})
+      }, 0)
     }
     if (saved && typeof saved.id !== 'undefined' && saved.id !== null) {
       apply(normalizeProducto(saved))
@@ -49,34 +52,21 @@ export function useCatalog() {
 
   const applyProductRemove = useCallback((id) => {
     setAllProducts((prev) => prev.filter((x) => x.id !== id))
-    cacheRemoveProduct(id).catch(() => {})
+    setTimeout(() => {
+      cacheRemoveProduct(id).catch(() => {})
+    }, 0)
   }, [])
 
   useEffect(() => {
     let alive = true
-    loadCatalogData({ force: reloadTick > 0 })
-      .then(({ productos, categorias, marcas, background }) => {
+    const forceFresh = reloadTick > 0
+    loadCatalogData(!forceFresh)
+      .then(({ productos, categorias, marcas }) => {
         if (!alive) return
         setAllProducts(productos)
         setCategorias(categorias)
         setMarcas(marcas)
-        const hasCache = productos.length > 0
-        if (hasCache) setStatus('ready')
-        if (!background) {
-          if (!hasCache) setStatus('error')
-          return
-        }
-        background.then((fresh) => {
-          if (!alive) return
-          if (!fresh) {
-            if (!hasCache) setStatus('error')
-            return
-          }
-          setAllProducts(fresh.productos)
-          setCategorias(fresh.categorias)
-          setMarcas(fresh.marcas)
-          setStatus('ready')
-        })
+        setStatus('ready')
       })
       .catch((err) => {
         console.error('Error cargando catálogo:', err)
@@ -92,6 +82,14 @@ export function useCatalog() {
       readCachedProductos()
         .then((list) => {
           if (Array.isArray(list) && list.length) setAllProducts(list)
+        })
+        .catch(() => {})
+      // Marcas y categorías también se editan desde el admin.
+      readCachedReference()
+        .then((reference) => {
+          if (!reference) return
+          if (reference.marcas?.length) setMarcas(reference.marcas)
+          if (reference.categorias?.length) setCategorias(reference.categorias)
         })
         .catch(() => {})
     }
@@ -176,7 +174,11 @@ export function useCatalog() {
     if (q) {
       return allProducts.filter((p) => {
         if (!matches(p)) return false
-        return p.search?.includes(q) ?? false
+        const haystack = [p.nombre, p.codigo, p.modelo, p.marcaNombre]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase()
+        return haystack.includes(q)
       })
     }
     return products.filter(matches)

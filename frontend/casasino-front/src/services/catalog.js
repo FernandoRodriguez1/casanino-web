@@ -4,7 +4,7 @@ import { apiFetch } from './api'
 
 const K_PRODUCTOS = 'productos_v2'
 const K_CATEGORIAS = 'categorias_v1'
-const K_MARCAS = 'marcas_v1'
+const K_MARCAS = 'marcas_v2'
 const K_META = 'meta_v2'
 
 export const CATALOG_TTL_MS = 10 * 60 * 1000
@@ -100,6 +100,27 @@ export function normalizeProducto(raw) {
   }
 }
 
+export function normalizeMarca(marca) {
+  return {
+    id: marca.id,
+    nombre: normalizeBrand(marca.nombre),
+    imagen: marca.imagen ?? null,
+  }
+}
+
+export function normalizeCategoria(categoria) {
+  return {
+    id: categoria.id,
+    slug: String(categoria.id),
+    nombre: categoria.nombre,
+    imagen: categoria.imagen ?? null,
+  }
+}
+
+export function notifyCatalogChanged() {
+  window.dispatchEvent(new Event('casanino:catalog-changed'))
+}
+
 export async function fetchProductos() {
   return once('productos', async () => {
     const raw = await getJson('/api/Productos')
@@ -114,12 +135,7 @@ export async function fetchProductos() {
 export async function fetchCategorias() {
   return once('categorias', async () => {
     const raw = await getJson('/api/Categorias')
-    const list = raw.map((c) => ({
-      id: c.id,
-      slug: String(c.id),
-      nombre: c.nombre,
-      imagen: c.imagen ?? null,
-    }))
+    const list = raw.map(normalizeCategoria)
     const current = await getMirror()
     mirror = { ...current, categorias: list }
     persist(K_CATEGORIAS, list)
@@ -130,7 +146,7 @@ export async function fetchCategorias() {
 export async function fetchMarcas() {
   return once('marcas', async () => {
     const raw = await getJson('/api/Marcas')
-    const list = raw.map((m) => ({ id: m.id, nombre: m.nombre }))
+    const list = raw.map(normalizeMarca)
     const current = await getMirror()
     mirror = { ...current, marcas: list }
     persist(K_MARCAS, list)
@@ -202,14 +218,12 @@ export async function cacheRemoveProduct(id) {
 
 export async function cacheStoreReference({ categorias, marcas }) {
   const current = await getMirror()
-  mirror = {
-    ...current,
-    categorias: categorias ?? current.categorias,
-    marcas: marcas ?? current.marcas,
-  }
+  const nextCategorias = categorias ? categorias.map(normalizeCategoria) : current.categorias
+  const nextMarcas = marcas ? marcas.map(normalizeMarca) : current.marcas
+  mirror = { ...current, categorias: nextCategorias, marcas: nextMarcas }
   const writes = []
-  if (categorias) writes.push(persist(K_CATEGORIAS, categorias))
-  if (marcas) writes.push(persist(K_MARCAS, marcas))
+  if (categorias) writes.push(persist(K_CATEGORIAS, nextCategorias))
+  if (marcas) writes.push(persist(K_MARCAS, nextMarcas))
   return Promise.all(writes)
 }
 
