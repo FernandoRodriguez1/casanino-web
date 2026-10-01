@@ -3,6 +3,7 @@ import { brandMeta, isLightColor } from '../utils/brand'
 
 function Navbar({ marcas, activeBrand, onSelectBrand, search, onSearch, counts, loading, showAdmin, onAdmin, onSearchSubmit, onSearchTyping }) {
   const [open, setOpen] = useState(false)
+  const [brandsOpen, setBrandsOpen] = useState(false)
   const innerRef = useRef(null)
 
   const tabs = [
@@ -19,16 +20,28 @@ function Navbar({ marcas, activeBrand, onSelectBrand, search, onSearch, counts, 
     }
   }
 
-  const close = () => setOpen(false)
+  const close = () => {
+    setOpen(false)
+    setBrandsOpen(false)
+  }
 
   useEffect(() => {
-    if (!open) return undefined
+    if (!open && !brandsOpen) return undefined
     const onDoc = (e) => {
       if (innerRef.current && !innerRef.current.contains(e.target)) close()
     }
     document.addEventListener('pointerdown', onDoc)
     return () => document.removeEventListener('pointerdown', onDoc)
-  }, [open])
+  }, [open, brandsOpen])
+
+  useEffect(() => {
+    if (!open && !brandsOpen) return undefined
+    const onKey = (e) => {
+      if (e.key === 'Escape') close()
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [open, brandsOpen])
 
   const pick = (fn, arg) => {
     close()
@@ -59,25 +72,53 @@ function Navbar({ marcas, activeBrand, onSelectBrand, search, onSearch, counts, 
             type="button"
             className={`brand-tab${activeBrand === 'all' ? ' active' : ''}`}
             style={tabStyle('all', activeBrand === 'all')}
-            onClick={() => onSelectBrand('all')}
+            onClick={() => pick(onSelectBrand, 'all')}
             disabled={loading}
           >
             <span>Todos</span>
             <span className="count">{loading ? '…' : (counts.all ?? 0)}</span>
           </button>
-          {marcas.map((m) => (
+
+          {marcas.length > 0 && (
             <button
-              key={m.nombre}
               type="button"
-              className={`brand-tab${activeBrand === m.nombre ? ' active' : ''}`}
-              style={tabStyle(m.nombre, activeBrand === m.nombre)}
-              onClick={() => pick(onSelectBrand, m.nombre)}
+              className={`brand-tab nav-brands-trigger${brandsOpen ? ' open' : ''}`}
+              aria-expanded={brandsOpen}
+              aria-controls="nav-brands-panel"
+              onClick={() => setBrandsOpen((v) => !v)}
               disabled={loading}
             >
-              <span>{m.nombre}</span>
-              <span className="count">{loading ? '…' : (counts[m.nombre] ?? 0)}</span>
+              <span>Todas nuestras marcas</span>
+              <span className="nav-brands-caret" aria-hidden="true">
+                ▾
+              </span>
             </button>
-          ))}
+          )}
+
+          {brandsOpen && marcas.length > 0 && (
+            <div
+              className="nav-brands-panel"
+              id="nav-brands-panel"
+              role="group"
+              aria-label="Todas nuestras marcas"
+            >
+              <div className="nav-brands-list">
+                {marcas.map((m) => (
+                  <button
+                    key={m.nombre}
+                    type="button"
+                    className={`brand-tab${activeBrand === m.nombre ? ' active' : ''}`}
+                    style={tabStyle(m.nombre, activeBrand === m.nombre)}
+                    onClick={() => pick(onSelectBrand, m.nombre)}
+                    disabled={loading}
+                  >
+                    <span>{m.nombre}</span>
+                    <span className="count">{loading ? '…' : (counts[m.nombre] ?? 0)}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </nav>
 
         <div className="search">
