@@ -60,13 +60,25 @@ export function useCatalog() {
   useEffect(() => {
     let alive = true
     const forceFresh = reloadTick > 0
-    loadCatalogData(!forceFresh)
-      .then(({ productos, categorias, marcas }) => {
-        if (!alive) return
-        setAllProducts(productos)
-        setCategorias(categorias)
-        setMarcas(marcas)
-        setStatus('ready')
+    loadCatalogData({ force: forceFresh })
+      .then(({ productos, categorias, marcas, background }) => {
+        const apply = (nextProductos, nextCategorias, nextMarcas) => {
+          if (!alive) return
+          setAllProducts(nextProductos)
+          setCategorias(nextCategorias)
+          setMarcas(nextMarcas)
+          setStatus('ready')
+        }
+        const hayCache = productos.length || categorias.length || marcas.length
+        if (hayCache) apply(productos, categorias, marcas)
+        if (background) {
+          background.then((fresh) => {
+            if (fresh) apply(fresh.productos, fresh.categorias, fresh.marcas)
+            else if (alive && !hayCache) setStatus('error')
+          })
+        } else if (!hayCache && alive) {
+          setStatus('error')
+        }
       })
       .catch((err) => {
         console.error('Error cargando catálogo:', err)
@@ -133,23 +145,14 @@ export function useCatalog() {
   const enrichedCategorias = useMemo(() => {
     const marca = {}
     const count = {}
-    const img = {}
     for (const p of allProducts) {
       if (p.categoriaId && !(p.categoriaId in marca)) marca[p.categoriaId] = p.marcaNombre
       count[p.categoriaId] = (count[p.categoriaId] ?? 0) + 1
-      if (
-        p.marcaNombre === 'Crossmaster' &&
-        p.imagenes?.length &&
-        !(p.categoriaId in img)
-      ) {
-        img[p.categoriaId] = p.imagenes.find((u) => !!u) ?? null
-      }
     }
     return categorias.map((c) => ({
       ...c,
       marca: marca[c.id] ?? null,
       count: count[c.id] ?? 0,
-      imagen: marca[c.id] === 'Crossmaster' ? (img[c.id] ?? c.imagen) : c.imagen,
     }))
   }, [categorias, allProducts])
 
