@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { isLightColor } from '../utils/brand'
+import { getBrandColor, initials, isLightColor } from '../utils/brand'
 import brandBta from '../assets/brands/bta.png'
 import brandDp from '../assets/brands/dp.png'
 import brandCrossmaster from '../assets/brands/crossmaster.png'
@@ -9,6 +9,9 @@ const BRAND_IMAGES = {
   Crossmaster: brandCrossmaster,
   'BTA Tools': brandBta,
 }
+
+// El logo subido en el admin tiene prioridad; el asset local es el fallback.
+const brandLogo = (marca) => marca.imagen ?? BRAND_IMAGES[marca.nombre] ?? null
 
 const ArrowRightSvg = () => (
   <svg
@@ -68,22 +71,38 @@ function CategoriesSection({ mode, categorias, marcas, counts, active, accent, o
         <div className="cats-marcas-inner">
           <h2 className="cats-marcas-title">Elegí una marca</h2>
           <div className="cats-grid">
-            {marcas.map((m) => (
-              <button
-                key={m.id}
-                type="button"
-                className="cat-card"
-                onClick={() => onSelectBrand(m.nombre)}
-              >
-                {BRAND_IMAGES[m.nombre] && (
+            {marcas.map((m) => {
+              const logo = brandLogo(m)
+              const color = getBrandColor(m.nombre)
+              return (
+                <button
+                  key={m.id}
+                  type="button"
+                  className="cat-card"
+                  onClick={() => onSelectBrand(m.nombre)}
+                >
+                  {/* El plate se renderiza siempre para que todas las cards
+                      tengan la misma anatomía, tengan logo o no. */}
                   <span className="cat-brand-img">
-                    <img src={BRAND_IMAGES[m.nombre]} alt={m.nombre} loading="lazy" />
+                    {logo ? (
+                      <img src={logo} alt={m.nombre} loading="lazy" />
+                    ) : (
+                      <span
+                        className="cat-brand-fallback"
+                        style={{
+                          background: color,
+                          color: isLightColor(color) ? '#000' : '#fff',
+                        }}
+                      >
+                        {initials(m.nombre)}
+                      </span>
+                    )}
                   </span>
-                )}
-                <span className="cat-name">{m.nombre}</span>
-                <span className="cat-count">{counts[m.nombre] ?? 0} productos</span>
-              </button>
-            ))}
+                  <span className="cat-name">{m.nombre}</span>
+                  <span className="cat-count">{counts[m.nombre] ?? 0} productos</span>
+                </button>
+              )
+            })}
           </div>
         </div>
       </section>

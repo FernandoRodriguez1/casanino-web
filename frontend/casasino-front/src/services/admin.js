@@ -1,5 +1,4 @@
 import { apiFetch } from './api'
-import { uploadFormData } from './upload'
 
 export function login(nombre, password) {
   return apiFetch('/api/Auth/login', { method: 'POST', body: { nombre, password } })
@@ -14,12 +13,12 @@ export function getProducto(token, id) {
   return apiFetch(`/api/Productos/${id}`, { token })
 }
 
-export function createProducto(token, formData, options) {
-  return uploadFormData('/api/Productos', { method: 'POST', token, formData, ...options })
+export function createProducto(token, formData) {
+  return apiFetch('/api/Productos', { method: 'POST', token, body: formData })
 }
 
-export function updateProducto(token, id, formData, options) {
-  return uploadFormData(`/api/Productos/${id}`, { method: 'PUT', token, formData, ...options })
+export function updateProducto(token, id, formData) {
+  return apiFetch(`/api/Productos/${id}`, { method: 'PUT', token, body: formData })
 }
 
 export function deleteProducto(token, id) {
@@ -30,9 +29,11 @@ export function deleteImagen(token, url) {
   return apiFetch(`/api/Imagenes?url=${encodeURIComponent(url)}`, { method: 'DELETE', token })
 }
 
-function nombreForm(nombre) {
+function entityForm(nombre, imagen, marcaId) {
   const fd = new FormData()
   fd.append('nombre', nombre)
+  if (imagen) fd.append('Imagen', imagen, imagen.name)
+  if (marcaId) fd.append('MarcaId', String(marcaId))
   return fd
 }
 
@@ -40,12 +41,20 @@ export function getCategorias(token) {
   return apiFetch('/api/Categorias', { token })
 }
 
-export function createCategoria(token, nombre) {
-  return apiFetch('/api/Categorias', { method: 'POST', token, body: nombreForm(nombre) })
+export function createCategoria(token, nombre, imagen, marcaId) {
+  return apiFetch('/api/Categorias', {
+    method: 'POST',
+    token,
+    body: entityForm(nombre, imagen, marcaId),
+  })
 }
 
-export function updateCategoria(token, id, nombre) {
-  return apiFetch(`/api/Categorias/${id}`, { method: 'PUT', token, body: nombreForm(nombre) })
+export function updateCategoria(token, id, nombre, imagen, marcaId) {
+  return apiFetch(`/api/Categorias/${id}`, {
+    method: 'PUT',
+    token,
+    body: entityForm(nombre, imagen, marcaId),
+  })
 }
 
 export function deleteCategoria(token, id) {
@@ -56,12 +65,12 @@ export function getMarcas(token) {
   return apiFetch('/api/Marcas', { token })
 }
 
-export function createMarca(token, nombre) {
-  return apiFetch('/api/Marcas', { method: 'POST', token, body: { nombre } })
+export function createMarca(token, nombre, imagen) {
+  return apiFetch('/api/Marcas', { method: 'POST', token, body: entityForm(nombre, imagen) })
 }
 
-export function updateMarca(token, id, nombre) {
-  return apiFetch(`/api/Marcas/${id}`, { method: 'PUT', token, body: { nombre } })
+export function updateMarca(token, id, nombre, imagen) {
+  return apiFetch(`/api/Marcas/${id}`, { method: 'PUT', token, body: entityForm(nombre, imagen) })
 }
 
 export function deleteMarca(token, id) {

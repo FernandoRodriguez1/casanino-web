@@ -1,9 +1,20 @@
 import { useEffect, useRef, useState } from 'react'
 import { brandMeta, isLightColor } from '../utils/brand'
 
+// Las marcas principales se muestran siempre como pills directos en el navbar,
+// ademas de seguir estando dentro del desplegable. Se listan a mano y no como
+// "las N primeras" porque el criterio es comercial, no alfabetico.
+const PRINCIPALES = ['BTA Tools', 'Crossmaster', 'Dowen Pagio']
+
 function Navbar({ marcas, activeBrand, onSelectBrand, search, onSearch, counts, loading, showAdmin, onAdmin, onSearchSubmit, onSearchTyping }) {
   const [open, setOpen] = useState(false)
+  const [brandsOpen, setBrandsOpen] = useState(false)
   const innerRef = useRef(null)
+
+  const principales = marcas.filter((m) => PRINCIPALES.includes(m.nombre))
+  // Si la marca activa no es una de las principales, el desplegable queda como
+  // unica referencia visible de que hay un filtro de marca puesto.
+  const activaFuera = activeBrand !== 'all' && !PRINCIPALES.includes(activeBrand)
 
   const tabs = [
     { key: 'all', label: 'Todos' },
@@ -19,16 +30,28 @@ function Navbar({ marcas, activeBrand, onSelectBrand, search, onSearch, counts, 
     }
   }
 
-  const close = () => setOpen(false)
+  const close = () => {
+    setOpen(false)
+    setBrandsOpen(false)
+  }
 
   useEffect(() => {
-    if (!open) return undefined
+    if (!open && !brandsOpen) return undefined
     const onDoc = (e) => {
       if (innerRef.current && !innerRef.current.contains(e.target)) close()
     }
     document.addEventListener('pointerdown', onDoc)
     return () => document.removeEventListener('pointerdown', onDoc)
-  }, [open])
+  }, [open, brandsOpen])
+
+  useEffect(() => {
+    if (!open && !brandsOpen) return undefined
+    const onKey = (e) => {
+      if (e.key === 'Escape') close()
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [open, brandsOpen])
 
   const pick = (fn, arg) => {
     close()
@@ -59,25 +82,66 @@ function Navbar({ marcas, activeBrand, onSelectBrand, search, onSearch, counts, 
             type="button"
             className={`brand-tab${activeBrand === 'all' ? ' active' : ''}`}
             style={tabStyle('all', activeBrand === 'all')}
-            onClick={() => onSelectBrand('all')}
+            onClick={() => pick(onSelectBrand, 'all')}
             disabled={loading}
           >
             <span>Todos</span>
             <span className="count">{loading ? '…' : (counts.all ?? 0)}</span>
           </button>
-          {marcas.map((m) => (
+
+          {principales.map((m) => (
             <button
               key={m.nombre}
               type="button"
-              className={`brand-tab${activeBrand === m.nombre ? ' active' : ''}`}
+              className={`brand-tab brand-tab--main${activeBrand === m.nombre ? ' active' : ''}`}
               style={tabStyle(m.nombre, activeBrand === m.nombre)}
               onClick={() => pick(onSelectBrand, m.nombre)}
               disabled={loading}
             >
               <span>{m.nombre}</span>
-              <span className="count">{loading ? '…' : (counts[m.nombre] ?? 0)}</span>
             </button>
           ))}
+
+          {marcas.length > 0 && (
+            <button
+              type="button"
+              className={`brand-tab nav-brands-trigger${brandsOpen ? ' open' : ''}${activaFuera ? ' has-active' : ''}`}
+              aria-expanded={brandsOpen}
+              aria-controls="nav-brands-panel"
+              onClick={() => setBrandsOpen((v) => !v)}
+              disabled={loading}
+            >
+              <span>Todas nuestras marcas</span>
+              <span className="nav-brands-caret" aria-hidden="true">
+                ▾
+              </span>
+            </button>
+          )}
+
+          {brandsOpen && marcas.length > 0 && (
+            <div
+              className="nav-brands-panel"
+              id="nav-brands-panel"
+              role="group"
+              aria-label="Todas nuestras marcas"
+            >
+              <div className="nav-brands-list">
+                {marcas.map((m) => (
+                  <button
+                    key={m.nombre}
+                    type="button"
+                    className={`brand-tab${activeBrand === m.nombre ? ' active' : ''}`}
+                    style={tabStyle(m.nombre, activeBrand === m.nombre)}
+                    onClick={() => pick(onSelectBrand, m.nombre)}
+                    disabled={loading}
+                  >
+                    <span>{m.nombre}</span>
+                    <span className="count">{loading ? '…' : (counts[m.nombre] ?? 0)}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </nav>
 
         <div className="search">

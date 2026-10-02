@@ -7,7 +7,7 @@
 }
 
 .navbar-inner {
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
   padding: 12px 20px;
   display: flex;
@@ -66,11 +66,27 @@
   align-items: center;
   gap: 8px;
   font-weight: 600;
+  white-space: nowrap;
   transition:
     background 0.15s,
     color 0.15s,
     border-color 0.15s,
     box-shadow 0.15s;
+}
+
+/* Las marcas principales van mas compactas que el resto porque conviven con
+   el boton de "todas nuestras marcas" y la fila tiene que quedar en una linea.
+   Sin conteo: el desplegable de al lado ya muestra el detalle de cada una. */
+.brand-tab--main {
+  padding: 8px 12px;
+  gap: 6px;
+}
+
+/* Cuando la marca activa no es una de las principales, el boton del desplegable
+   se marca para que se vea que hay un filtro puesto. */
+.nav-brands-trigger.has-active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(252, 76, 2, 0.12);
 }
 
 .brand-tab:hover {
@@ -103,6 +119,10 @@
 }
 
 .search input {
+  /* Sin esto el input mide 240 de contenido MAS el padding y el borde, o sea
+     308 reales, y a ~1024px eso manda el buscador a una segunda linea. En el
+     menu movil, que lo pone en width:100%, tambien se desbordaba. */
+  box-sizing: border-box;
   width: 240px;
   padding: 9px 34px 9px 32px;
   border: 1px solid var(--border);
@@ -112,6 +132,20 @@
   background: var(--bg);
   outline: none;
   transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+/* El buscador del header cede ancho antes de dejar la fila de una linea. El del
+   menu movil tiene sus propias reglas y no entra aqui. */
+.navbar-inner > .search {
+  flex: 0 1 240px;
+  min-width: 140px;
+}
+
+/* Sin esto el input mantiene sus 240px fijos dentro de un contenedor mas chico
+   y se sale del navbar. */
+.navbar-inner > .search input {
+  width: 100%;
+  min-width: 0;
 }
 
 .search input:focus {
@@ -724,6 +758,7 @@ main {
 .cats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 260px));
+  grid-auto-rows: 1fr;
   gap: 16px;
   justify-content: center;
 }
@@ -748,23 +783,45 @@ main {
   border-color: var(--swipper-accent, #fc4c02);
 }
 
+/* Plate de logo: caja fija y simétrica para que ninguna card se desvíe. */
 .cat-brand-img {
   display: flex;
   align-items: center;
   justify-content: center;
   height: 96px;
-  padding: 18px 20px 2px;
+  padding: 14px 20px;
 }
 
+/* width/height al 100% + contain: el logo nunca se deforma y la caja no
+   salta de tamaño mientras carga la imagen. El max-width evita que un logo
+   panorámico ocupe todo el ancho de la card. */
 .cat-brand-img img {
-  max-width: 100%;
-  max-height: 100%;
+  width: 100%;
+  height: 100%;
+  max-width: 180px;
   object-fit: contain;
   display: block;
 }
 
+.cat-brand-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 10px;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+/* Alto fijo para 2 líneas: un nombre largo no rompe la retícula. */
 .cat-name {
-  display: block;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  height: 58px;
   font-size: 17px;
   font-weight: 700;
   line-height: 1.3;
@@ -944,11 +1001,6 @@ main {
   gap: 18px;
   margin-top: 24px;
   scroll-margin-top: 96px;
-}
-
-.grid > .card {
-  content-visibility: auto;
-  contain-intrinsic-size: auto 290px;
 }
 
 .band {
@@ -1791,26 +1843,6 @@ main {
   color: var(--text);
 }
 
-.ac-upload {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.ac-upload-track {
-  height: 6px;
-  border-radius: 999px;
-  background: var(--border);
-  overflow: hidden;
-}
-
-.ac-upload-fill {
-  height: 100%;
-  border-radius: 999px;
-  background: var(--hero-accent, #fc4c02);
-  transition: width 0.15s linear;
-}
-
 .ac-error {
   color: #dc2626;
   font-size: 13px;
@@ -2011,7 +2043,7 @@ main {
 .ac-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 12px;
   padding: 12px 4px;
   border-bottom: 1px solid var(--border);
@@ -2034,10 +2066,44 @@ main {
   white-space: nowrap;
 }
 
+.ac-badge {
+  align-self: flex-start;
+  max-width: 100%;
+  margin-top: 3px;
+  padding: 2px 8px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--panel);
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.5;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ac-badge-warn {
+  border-color: #fc4c02;
+  background: #fff4ef;
+  color: #c03f00;
+}
+
 .ac-row-actions {
   display: flex;
   gap: 8px;
   flex-shrink: 0;
+  margin-left: auto;
+}
+
+.ac-file-preview {
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  display: block;
 }
 
 .ac-table-wrap {
@@ -2301,6 +2367,78 @@ main {
   margin-left: auto;
 }
 
+.nav-brands-caret {
+  font-size: 10px;
+  line-height: 1;
+  transition: transform 0.15s;
+}
+
+.nav-brands-trigger.open .nav-brands-caret {
+  transform: rotate(180deg);
+}
+
+.nav-brands-panel {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 19;
+  padding: 14px 20px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 18px 34px rgba(2, 6, 23, 0.16);
+}
+
+/* Las marcas reparten el ancho del panel en vez de quedar pegadas a la
+   izquierda. El minimo de 290px es el tope por fila: entran 4 columnas de 1280px
+   para arriba, que es donde vive el panel, y menos en tablas angostas. Como es
+   auto-fit, si un dia quedan menos marcas que columnas las vacias se colapsan y
+   no queda hueco. */
+.nav-brands-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+  gap: 8px;
+  max-height: min(60dvh, 420px);
+  overflow-y: auto;
+  padding: 4px;
+  margin: -4px;
+}
+
+/* La celda es ancha, asi que el nombre va a la izquierda y el contador al borde
+   derecho, como una fila de menu y no como un pill estirado. */
+.nav-brands-list .brand-tab {
+  justify-content: space-between;
+  min-width: 0;
+}
+
+/* .brand-tab es nowrap, asi que sin esto un nombre largo se sale de la celda en
+   vez de recortarse. */
+.nav-brands-list .brand-tab > span:first-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nav-brands-list .brand-tab .count {
+  flex-shrink: 0;
+}
+
+/* En escritorio angosto la fila se aprieta antes de dejar de caber en una linea:
+   se ocultan los conteos y se baja un punto el tamano de los pills. Los conteos
+   siguen visibles en el desplegable y en el menu hamburguesa. Por debajo de
+   1024 la fila entera no entra ni apretada, asi que ahi ya se usa el menu. */
+@media (max-width: 1279px) and (min-width: 1025px) {
+  .navbar-inner > .brand-tabs .brand-tab .count {
+    display: none;
+  }
+
+  .navbar-inner > .brand-tabs .brand-tab {
+    font-size: 13px;
+    padding: 8px 10px;
+  }
+}
+
 .nav-burger {
   display: none;
 }
@@ -2309,9 +2447,18 @@ main {
   display: none;
 }
 
-@media (max-width: 600px) {
+/* ---------- Menu colapsado (<=1024px) ---------- */
+
+/* El logo, los cinco pills y el buscador piden ~1020px en una linea, asi que en
+   tablet y phone los pills y el buscador pasan al menu hamburguesa, que ya
+   lista todas las marcas con su conteo. El corte va en 1024 inclusive porque a
+   1024 exacto la fila no llega: el buscador se cae y el navbar queda de 122px
+   de alto. Este bloque absorbia ademas reglas sueltas que estaban en un
+   @media de 600px mas abajo, con valores distintos por cascada; quedan
+   unificados aca. */
+@media (max-width: 1024px) {
   .navbar-inner {
-    padding: 10px 14px;
+    padding: 10px 12px;
     gap: 10px;
   }
 
@@ -2441,6 +2588,53 @@ main {
     margin-top: 4px;
     border-style: dashed;
   }
+
+  .navbar-inner {
+    justify-content: center;
+  }
+
+  /* El menu se abre con display + opacity, no con display:none, para poder
+     animarlo. El wrapper .nav-menu-inner que lo centraba estaba definido pero
+     el JSX nunca lo renderiza, asi que no hace falta. */
+  .nav-menu {
+    display: block;
+    border-top: 1px solid var(--border);
+    background: var(--panel);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-8px);
+    transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s ease;
+  }
+
+  .nav-menu.open {
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+  }
+
+  .nav-menu .search {
+    width: 100%;
+    max-width: 420px;
+    margin: 0 auto;
+  }
+
+  .nav-menu .search input {
+    width: 100%;
+    text-align: center;
+  }
+
+  .brand-text strong {
+    font-size: 15px;
+  }
+
+  .brand-text small {
+    font-size: 11px;
+  }
+
+  .search .clear {
+    width: 28px;
+    height: 28px;
+  }
 }
 
 @media (max-width: 600px) {
@@ -2458,83 +2652,13 @@ main {
   }
 }
 
-/* ---------- Mobile (<600px) ---------- */
+/* ---------- Contenido en pantallas chicas (<600px) ---------- */
+/* Lo del navbar vive arriba, en el bloque de 1023px, asi que el menu hamburguesa
+   y los pills se comportan igual en tablet que en phone. */
 
 @media (max-width: 600px) {
   main {
     padding: 20px 14px;
-  }
-
-  .navbar-inner {
-    padding: 10px 12px;
-    gap: 10px;
-    justify-content: center;
-  }
-
-  .navbar-inner > .brand-tabs,
-  .navbar-inner > .search,
-  .navbar-inner > .admin-link {
-    display: none;
-  }
-
-  .nav-burger {
-    display: flex;
-  }
-
-  .nav-menu {
-    display: block;
-    border-top: 1px solid var(--border);
-    background: var(--panel);
-    opacity: 0;
-    visibility: hidden;
-    transform: translateY(-8px);
-    transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s ease;
-  }
-
-  .nav-menu.open {
-    opacity: 1;
-    visibility: visible;
-    transform: none;
-  }
-
-  .nav-menu-inner {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 14px 12px 20px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 16px;
-    max-height: calc(100dvh - 64px);
-    overflow-y: auto;
-  }
-
-  .nav-menu .search {
-    width: 100%;
-    max-width: 420px;
-    margin: 0 auto;
-  }
-
-  .nav-menu .search input {
-    width: 100%;
-    text-align: center;
-  }
-
-  .brand-logo {
-    height: 34px;
-  }
-
-  .brand-text strong {
-    font-size: 15px;
-  }
-
-  .brand-text small {
-    font-size: 11px;
-  }
-
-  .search .clear {
-    width: 28px;
-    height: 28px;
   }
 
   .hero {
