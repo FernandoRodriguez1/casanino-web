@@ -2402,8 +2402,9 @@ main {
 
 /* En escritorio angosto la fila se aprieta antes de dejar de caber en una linea:
    se ocultan los conteos y se baja un punto el tamano de los pills. Los conteos
-   siguen visibles en el desplegable y en el menu movil. */
-@media (max-width: 1279px) and (min-width: 601px) {
+   siguen visibles en el desplegable y en el menu hamburguesa. Por debajo de
+   1024 la fila entera no entra ni apretada, asi que ahi ya se usa el menu. */
+@media (max-width: 1279px) and (min-width: 1025px) {
   .navbar-inner > .brand-tabs .brand-tab .count {
     display: none;
   }
@@ -2411,22 +2412,6 @@ main {
   .navbar-inner > .brand-tabs .brand-tab {
     font-size: 13px;
     padding: 8px 10px;
-  }
-}
-
-/* Rango de tablet: la fila con todo su contenido pide ~1020px, asi que entre
-   601 y 1060 se aprietan los gaps y el buscador para que no se caiga de lado. */
-@media (max-width: 1060px) and (min-width: 601px) {
-  .navbar-inner {
-    gap: 10px;
-  }
-
-  .navbar-inner > .brand-tabs {
-    gap: 4px;
-  }
-
-  .navbar-inner > .search {
-    flex-basis: 200px;
   }
 }
 
@@ -2438,9 +2423,18 @@ main {
   display: none;
 }
 
-@media (max-width: 600px) {
+/* ---------- Menu colapsado (<=1024px) ---------- */
+
+/* El logo, los cinco pills y el buscador piden ~1020px en una linea, asi que en
+   tablet y phone los pills y el buscador pasan al menu hamburguesa, que ya
+   lista todas las marcas con su conteo. El corte va en 1024 inclusive porque a
+   1024 exacto la fila no llega: el buscador se cae y el navbar queda de 122px
+   de alto. Este bloque absorbia ademas reglas sueltas que estaban en un
+   @media de 600px mas abajo, con valores distintos por cascada; quedan
+   unificados aca. */
+@media (max-width: 1024px) {
   .navbar-inner {
-    padding: 10px 14px;
+    padding: 10px 12px;
     gap: 10px;
   }
 
@@ -2570,6 +2564,53 @@ main {
     margin-top: 4px;
     border-style: dashed;
   }
+
+  .navbar-inner {
+    justify-content: center;
+  }
+
+  /* El menu se abre con display + opacity, no con display:none, para poder
+     animarlo. El wrapper .nav-menu-inner que lo centraba estaba definido pero
+     el JSX nunca lo renderiza, asi que no hace falta. */
+  .nav-menu {
+    display: block;
+    border-top: 1px solid var(--border);
+    background: var(--panel);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-8px);
+    transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s ease;
+  }
+
+  .nav-menu.open {
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+  }
+
+  .nav-menu .search {
+    width: 100%;
+    max-width: 420px;
+    margin: 0 auto;
+  }
+
+  .nav-menu .search input {
+    width: 100%;
+    text-align: center;
+  }
+
+  .brand-text strong {
+    font-size: 15px;
+  }
+
+  .brand-text small {
+    font-size: 11px;
+  }
+
+  .search .clear {
+    width: 28px;
+    height: 28px;
+  }
 }
 
 @media (max-width: 600px) {
@@ -2587,83 +2628,13 @@ main {
   }
 }
 
-/* ---------- Mobile (<600px) ---------- */
+/* ---------- Contenido en pantallas chicas (<600px) ---------- */
+/* Lo del navbar vive arriba, en el bloque de 1023px, asi que el menu hamburguesa
+   y los pills se comportan igual en tablet que en phone. */
 
 @media (max-width: 600px) {
   main {
     padding: 20px 14px;
-  }
-
-  .navbar-inner {
-    padding: 10px 12px;
-    gap: 10px;
-    justify-content: center;
-  }
-
-  .navbar-inner > .brand-tabs,
-  .navbar-inner > .search,
-  .navbar-inner > .admin-link {
-    display: none;
-  }
-
-  .nav-burger {
-    display: flex;
-  }
-
-  .nav-menu {
-    display: block;
-    border-top: 1px solid var(--border);
-    background: var(--panel);
-    opacity: 0;
-    visibility: hidden;
-    transform: translateY(-8px);
-    transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s ease;
-  }
-
-  .nav-menu.open {
-    opacity: 1;
-    visibility: visible;
-    transform: none;
-  }
-
-  .nav-menu-inner {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 14px 12px 20px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 16px;
-    max-height: calc(100dvh - 64px);
-    overflow-y: auto;
-  }
-
-  .nav-menu .search {
-    width: 100%;
-    max-width: 420px;
-    margin: 0 auto;
-  }
-
-  .nav-menu .search input {
-    width: 100%;
-    text-align: center;
-  }
-
-  .brand-logo {
-    height: 34px;
-  }
-
-  .brand-text strong {
-    font-size: 15px;
-  }
-
-  .brand-text small {
-    font-size: 11px;
-  }
-
-  .search .clear {
-    width: 28px;
-    height: 28px;
   }
 
   .hero {
