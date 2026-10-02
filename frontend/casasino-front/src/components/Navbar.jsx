@@ -1,10 +1,20 @@
 import { useEffect, useRef, useState } from 'react'
 import { brandMeta, isLightColor } from '../utils/brand'
 
+// Las marcas principales se muestran siempre como pills directos en el navbar,
+// ademas de seguir estando dentro del desplegable. Se listan a mano y no como
+// "las N primeras" porque el criterio es comercial, no alfabetico.
+const PRINCIPALES = ['BTA Tools', 'Crossmaster', 'Dowen Pagio']
+
 function Navbar({ marcas, activeBrand, onSelectBrand, search, onSearch, counts, loading, showAdmin, onAdmin, onSearchSubmit, onSearchTyping }) {
   const [open, setOpen] = useState(false)
   const [brandsOpen, setBrandsOpen] = useState(false)
   const innerRef = useRef(null)
+
+  const principales = marcas.filter((m) => PRINCIPALES.includes(m.nombre))
+  // Si la marca activa no es una de las principales, el desplegable queda como
+  // unica referencia visible de que hay un filtro de marca puesto.
+  const activaFuera = activeBrand !== 'all' && !PRINCIPALES.includes(activeBrand)
 
   const tabs = [
     { key: 'all', label: 'Todos' },
@@ -79,10 +89,23 @@ function Navbar({ marcas, activeBrand, onSelectBrand, search, onSearch, counts, 
             <span className="count">{loading ? '…' : (counts.all ?? 0)}</span>
           </button>
 
+          {principales.map((m) => (
+            <button
+              key={m.nombre}
+              type="button"
+              className={`brand-tab brand-tab--main${activeBrand === m.nombre ? ' active' : ''}`}
+              style={tabStyle(m.nombre, activeBrand === m.nombre)}
+              onClick={() => pick(onSelectBrand, m.nombre)}
+              disabled={loading}
+            >
+              <span>{m.nombre}</span>
+            </button>
+          ))}
+
           {marcas.length > 0 && (
             <button
               type="button"
-              className={`brand-tab nav-brands-trigger${brandsOpen ? ' open' : ''}`}
+              className={`brand-tab nav-brands-trigger${brandsOpen ? ' open' : ''}${activaFuera ? ' has-active' : ''}`}
               aria-expanded={brandsOpen}
               aria-controls="nav-brands-panel"
               onClick={() => setBrandsOpen((v) => !v)}

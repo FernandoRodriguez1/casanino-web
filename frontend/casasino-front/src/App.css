@@ -7,7 +7,7 @@
 }
 
 .navbar-inner {
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
   padding: 12px 20px;
   display: flex;
@@ -66,11 +66,27 @@
   align-items: center;
   gap: 8px;
   font-weight: 600;
+  white-space: nowrap;
   transition:
     background 0.15s,
     color 0.15s,
     border-color 0.15s,
     box-shadow 0.15s;
+}
+
+/* Las marcas principales van mas compactas que el resto porque conviven con
+   el boton de "todas nuestras marcas" y la fila tiene que quedar en una linea.
+   Sin conteo: el desplegable de al lado ya muestra el detalle de cada una. */
+.brand-tab--main {
+  padding: 8px 12px;
+  gap: 6px;
+}
+
+/* Cuando la marca activa no es una de las principales, el boton del desplegable
+   se marca para que se vea que hay un filtro puesto. */
+.nav-brands-trigger.has-active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(252, 76, 2, 0.12);
 }
 
 .brand-tab:hover {
@@ -103,6 +119,10 @@
 }
 
 .search input {
+  /* Sin esto el input mide 240 de contenido MAS el padding y el borde, o sea
+     308 reales, y a ~1024px eso manda el buscador a una segunda linea. En el
+     menu movil, que lo pone en width:100%, tambien se desbordaba. */
+  box-sizing: border-box;
   width: 240px;
   padding: 9px 34px 9px 32px;
   border: 1px solid var(--border);
@@ -112,6 +132,20 @@
   background: var(--bg);
   outline: none;
   transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+/* El buscador del header cede ancho antes de dejar la fila de una linea. El del
+   menu movil tiene sus propias reglas y no entra aqui. */
+.navbar-inner > .search {
+  flex: 0 1 240px;
+  min-width: 140px;
+}
+
+/* Sin esto el input mantiene sus 240px fijos dentro de un contenedor mas chico
+   y se sale del navbar. */
+.navbar-inner > .search input {
+  width: 100%;
+  min-width: 0;
 }
 
 .search input:focus {
@@ -2364,6 +2398,36 @@ main {
   overflow-y: auto;
   padding: 4px;
   margin: -4px;
+}
+
+/* En escritorio angosto la fila se aprieta antes de dejar de caber en una linea:
+   se ocultan los conteos y se baja un punto el tamano de los pills. Los conteos
+   siguen visibles en el desplegable y en el menu movil. */
+@media (max-width: 1279px) and (min-width: 601px) {
+  .navbar-inner > .brand-tabs .brand-tab .count {
+    display: none;
+  }
+
+  .navbar-inner > .brand-tabs .brand-tab {
+    font-size: 13px;
+    padding: 8px 10px;
+  }
+}
+
+/* Rango de tablet: la fila con todo su contenido pide ~1020px, asi que entre
+   601 y 1060 se aprietan los gaps y el buscador para que no se caiga de lado. */
+@media (max-width: 1060px) and (min-width: 601px) {
+  .navbar-inner {
+    gap: 10px;
+  }
+
+  .navbar-inner > .brand-tabs {
+    gap: 4px;
+  }
+
+  .navbar-inner > .search {
+    flex-basis: 200px;
+  }
 }
 
 .nav-burger {
