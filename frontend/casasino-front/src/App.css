@@ -2024,6 +2024,39 @@ main {
   flex-wrap: wrap;
 }
 
+.ac-bulkbar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding: 14px 16px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.ac-bulkbar-main {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.ac-bulkbar-main > strong {
+  font-size: 14px;
+  align-self: center;
+}
+
+.ac-bulkbar-main .ac-field {
+  margin: 0;
+}
+
+.ac-bulkbar-main .ac-hint,
+.ac-bulkbar-main .ac-error {
+  align-self: center;
+  max-width: 420px;
+}
+
 .ac-search {
   font: inherit;
   color: var(--text-h);
@@ -2129,6 +2162,43 @@ main {
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--text);
+}
+
+.ac-col-select {
+  width: 44px;
+  padding-right: 0 !important;
+}
+
+.ac-col-select input[type='checkbox'] {
+  width: 17px;
+  height: 17px;
+  margin: 0;
+  cursor: pointer;
+  accent-color: #fc4c02;
+}
+
+.ac-col-select input[type='checkbox']:disabled {
+  cursor: default;
+}
+
+.ac-upload {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ac-upload-track {
+  height: 6px;
+  width: 100%;
+  border-radius: 999px;
+  background: var(--border);
+  overflow: hidden;
+}
+
+.ac-upload-fill {
+  height: 100%;
+  background: #fc4c02;
+  transition: width 0.15s ease;
 }
 
 .ac-thumb {

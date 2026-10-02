@@ -21,6 +21,23 @@ export function updateProducto(token, id, formData) {
   return apiFetch(`/api/Productos/${id}`, { method: 'PUT', token, body: formData })
 }
 
+// El PUT de productos es un reemplazo total: hay que reenviar todos los campos o
+// quedan vacíos. No se manda ninguna clave Imagenes*, ImagenesOrden ni
+// ImagenesEliminar a propósito: el backend preserva las fotos existentes cuando
+// no le llegan esos campos (ProductosController.BuildOrderedImages).
+export function buildProductoForm(producto, { categoriaId } = {}) {
+  const fd = new FormData()
+  fd.append('codigo', producto.codigo ?? '')
+  fd.append('modelo', producto.modelo ?? '')
+  fd.append('nombre', producto.nombre ?? '')
+  fd.append('descripcion', producto.descripcion ?? '')
+  fd.append('especificaciones', producto.especificaciones ?? '')
+  fd.append('accesorios', producto.accesorios ?? '')
+  fd.append('categoriaId', String(categoriaId ?? producto.categoriaId ?? ''))
+  fd.append('marcaId', String(producto.marcaId ?? ''))
+  return fd
+}
+
 export function deleteProducto(token, id) {
   return apiFetch(`/api/Productos/${id}`, { method: 'DELETE', token })
 }
