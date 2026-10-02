@@ -1,5 +1,17 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
+// Badge de un campo en la fila del listado. Resuelve el id contra las options
+// del select; si el campo vino vacio lo marca para que se note sin abrir.
+function rowBadge(f, item) {
+  const opt = (f.options ?? []).find((o) => String(o.value) === String(item[f.name]))
+  const vacio = item[f.name] === null || item[f.name] === undefined || item[f.name] === ''
+  return (
+    <span key={f.name} className={`ac-badge${vacio ? ' ac-badge-warn' : ''}`}>
+      {vacio ? (f.emptyLabel ?? 'Sin asignar') : (opt?.label ?? String(item[f.name]))}
+    </span>
+  )
+}
+
 function SimpleCrud({ title, entityLabel, api, fields, onChange }) {
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
@@ -35,7 +47,11 @@ function SimpleCrud({ title, entityLabel, api, fields, onChange }) {
   useEffect(() => {
     if (editing) {
       const base = {}
-      for (const f of fields) base[f.name] = editing?.[f.name] ?? ''
+      // Los selects guardan strings: un id numérico o null desde la API
+      // se castea para que value y onChange trabajen parejo.
+      for (const f of fields) {
+        base[f.name] = f.type === 'select' ? String(editing?.[f.name] ?? '') : (editing?.[f.name] ?? '')
+      }
       setFormValues(base)
     }
   }, [editing, fields])
@@ -109,7 +125,9 @@ function SimpleCrud({ title, entityLabel, api, fields, onChange }) {
       // Los campos type:'file' no van en values: se pasan aparte como File.
       for (const f of fields) {
         if (f.type === 'file') continue
-        values[f.name] = formValues[f.name]?.trim() ?? ''
+        // String() porque un select puede sembrarse con un number desde la API
+        // y los number no tienen .trim() -> TypeError.
+        values[f.name] = String(formValues[f.name] ?? '').trim()
       }
       if (isNew) {
         const missing = fields.find((f) => f.required && !values[f.name])
@@ -191,6 +209,7 @@ function SimpleCrud({ title, entityLabel, api, fields, onChange }) {
               <div className="ac-row-main">
                 <strong>{item.nombre}</strong>
                 <span className="ac-muted">ID {item.id}</span>
+                {fields.filter((f) => f.showInRow).map((f) => rowBadge(f, item))}
               </div>
               <div className="ac-row-actions">
                 <button type="button" className="ac-btn" onClick={() => openEdit(item)}>
@@ -234,6 +253,23 @@ function SimpleCrud({ title, entityLabel, api, fields, onChange }) {
                         : 'Opcional.')}
                   </span>
                 </div>
+              ) : f.type === 'select' ? (
+                <label key={f.name} className="ac-field">
+                  <span>{f.label}{f.required ? ' *' : ''}</span>
+                  <select
+                    value={formValues[f.name] ?? ''}
+                    onChange={(e) => change(f.name, e.target.value)}
+                    disabled={formBusy}
+                    required={f.required}
+                  >
+                    <option value="">{f.placeholder ?? 'Seleccionar...'}</option>
+                    {(f.options ?? []).map((o) => (
+                      <option key={o.value} value={String(o.value)}>
+                        {o.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
               ) : (
                 <label key={f.name} className="ac-field">
                   <span>{f.label}{f.required ? ' *' : ''}</span>

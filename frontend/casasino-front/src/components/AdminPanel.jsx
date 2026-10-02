@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import * as adminApi from '../services/admin'
 import { cacheStoreReference, notifyCatalogChanged } from '../services/catalog'
 import SimpleCrud from './SimpleCrud'
@@ -15,6 +15,22 @@ const LOGO_HINT = 'PNG con transparencia ideal, ya recortado y sin márgenes bla
 
 function AdminPanel({ token, onLogout, onBack }) {
   const [tab, setTab] = useState('productos')
+  // Las categorías necesitan las marcas para armar su select, así que el panel
+  // las tiene a mano. SimpleCrud no expone la lista que ya descargó.
+  const [marcas, setMarcas] = useState([])
+
+  useEffect(() => {
+    let vigente = true
+    adminApi
+      .getMarcas(token)
+      .then((list) => {
+        if (vigente) setMarcas(Array.isArray(list) ? list : [])
+      })
+      .catch(() => {})
+    return () => {
+      vigente = false
+    }
+  }, [token])
 
   // Las marcas y categorías alimentan el catálogo público, así que al guardar
   // hay que refrescar la caché de referencia y avisarle a useCatalog.
@@ -23,14 +39,47 @@ function AdminPanel({ token, onLogout, onBack }) {
     notifyCatalogChanged()
   }, [])
 
-  const syncMarcas = useCallback((list) => syncReference('marcas', list), [syncReference])
+  const syncMarcas = useCallback(
+    (list) => {
+      // La lista que pasa SimpleCrud ya es autoritativa: reúsala para que una
+      // marca recién creada aparezca en el select sin otro refetch.
+      setMarcas(Array.isArray(list) ? list : [])
+      return syncReference('marcas', list)
+    },
+    [syncReference]
+  )
   const syncCategorias = useCallback((list) => syncReference('categorias', list), [syncReference])
+
+  const marcaField = useMemo(
+    () => ({
+      name: 'marcaId',
+      label: 'Marca',
+      type: 'select',
+      required: true,
+      showInRow: true,
+      emptyLabel: 'Sin marca',
+      options: marcas.map((m) => ({ value: m.id, label: m.nombre })),
+    }),
+    [marcas]
+  )
+
+  // Memizado a propósito: SimpleCrud resiembra el formulario en un efecto que
+  // depende de [editing, fields]. Con el array inline, cada render del panel
+  // pisaría lo que el usuario ya escribió con el formulario abierto.
+  const categoriaFields = useMemo(
+    () => [
+      { name: 'nombre', label: 'Nombre', required: true },
+      marcaField,
+      { name: 'imagen', label: 'Logo', type: 'file', accept: 'image/*', hint: LOGO_HINT },
+    ],
+    [marcaField]
+  )
 
   const categoriaApi = useMemo(
     () => ({
       fetchList: () => adminApi.getCategorias(token),
-      create: (v, file) => adminApi.createCategoria(token, v.nombre, file),
-      update: (id, v, file) => adminApi.updateCategoria(token, id, v.nombre, file),
+      create: (v, file) => adminApi.createCategoria(token, v.nombre, file, v.marcaId),
+      update: (id, v, file) => adminApi.updateCategoria(token, id, v.nombre, file, v.marcaId),
       remove: (id) => adminApi.deleteCategoria(token, id),
     }),
     [token]
@@ -98,10 +147,7 @@ function AdminPanel({ token, onLogout, onBack }) {
             entityLabel="categoría"
             api={categoriaApi}
             onChange={syncCategorias}
-            fields={[
-              { name: 'nombre', label: 'Nombre', required: true },
-              { name: 'imagen', label: 'Logo', type: 'file', accept: 'image/*', hint: LOGO_HINT },
-            ]}
+            fields={categoriaFields}
           />
         )}
         {tab === 'marcas' && (

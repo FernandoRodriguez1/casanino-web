@@ -2032,6 +2032,29 @@ main {
   white-space: nowrap;
 }
 
+.ac-badge {
+  align-self: flex-start;
+  max-width: 100%;
+  margin-top: 3px;
+  padding: 2px 8px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--panel);
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.5;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ac-badge-warn {
+  border-color: #fc4c02;
+  background: #fff4ef;
+  color: #c03f00;
+}
+
 .ac-row-actions {
   display: flex;
   gap: 8px;

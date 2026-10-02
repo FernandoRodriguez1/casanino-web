@@ -29,10 +29,11 @@ export function deleteImagen(token, url) {
   return apiFetch(`/api/Imagenes?url=${encodeURIComponent(url)}`, { method: 'DELETE', token })
 }
 
-function entityForm(nombre, imagen) {
+function entityForm(nombre, imagen, marcaId) {
   const fd = new FormData()
   fd.append('nombre', nombre)
   if (imagen) fd.append('Imagen', imagen, imagen.name)
+  if (marcaId) fd.append('MarcaId', String(marcaId))
   return fd
 }
 
@@ -40,12 +41,20 @@ export function getCategorias(token) {
   return apiFetch('/api/Categorias', { token })
 }
 
-export function createCategoria(token, nombre, imagen) {
-  return apiFetch('/api/Categorias', { method: 'POST', token, body: entityForm(nombre, imagen) })
+export function createCategoria(token, nombre, imagen, marcaId) {
+  return apiFetch('/api/Categorias', {
+    method: 'POST',
+    token,
+    body: entityForm(nombre, imagen, marcaId),
+  })
 }
 
-export function updateCategoria(token, id, nombre, imagen) {
-  return apiFetch(`/api/Categorias/${id}`, { method: 'PUT', token, body: entityForm(nombre, imagen) })
+export function updateCategoria(token, id, nombre, imagen, marcaId) {
+  return apiFetch(`/api/Categorias/${id}`, {
+    method: 'PUT',
+    token,
+    body: entityForm(nombre, imagen, marcaId),
+  })
 }
 
 export function deleteCategoria(token, id) {
